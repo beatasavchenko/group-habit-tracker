@@ -1,5 +1,10 @@
+"use client";
+
 import {
   Calendar,
+  Check,
+  ChevronsUpDown,
+  Command,
   Home,
   Inbox,
   PlusCircleIcon,
@@ -16,6 +21,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "~/components/ui/sidebar";
 import { NavUser } from "./nav-user";
 import { Label } from "~/components/ui/label";
@@ -31,42 +37,129 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { CreateTabs } from "./CreateTabs";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import {
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "cmdk";
+import { cn } from "~/lib/utils";
+import React from "react";
+import { ModeToggle } from "./ui/mode-toggle";
+import Link from "next/link";
+import { Separator } from "@radix-ui/react-separator";
 
-const items = [
+const communitySchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  habitName: z.string().min(2, "Habit name must be at least 2 characters."),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters."),
+  dailyGoal: z.number(), //TODO: think about it
+  tags: z.array(z.string()).min(1, "Select at least one tag."),
+});
+
+const groupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  friends: z.array(z.string()).optional(),
+});
+
+export const formSchema = z.union([
+  z.object({ community: communitySchema }),
+  z.object({ group: groupSchema }),
+]);
+
+const groups = [
   {
-    title: "Home",
-    url: "#",
-    icon: Home,
+    id: 1,
+    name: "Family",
+    url: "/groups/1",
+    image: "img.jpg",
   },
   {
-    title: "Inbox",
-    url: "#",
-    icon: Inbox,
+    id: 2,
+    name: "Team",
+    url: "/groups/2",
+    image: "img.jpg",
+  },
+];
+
+const communities = [
+  {
+    id: 1,
+    name: "Water Drinkers",
+    url: "/communities/1",
+    image: "img.jpg",
   },
   {
-    title: "Calendar",
-    url: "#",
-    icon: Calendar,
+    id: 2,
+    name: "Yoga Enthusiasts",
+    url: "/communities/2",
+    image: "img.jpg",
+  },
+];
+
+const allCommunities = [
+  {
+    id: 1,
+    name: "Water Drinkers",
+    url: "/communities/1",
+    image: "img.jpg",
   },
   {
-    title: "Search",
-    url: "#",
-    icon: Search,
+    id: 2,
+    name: "Yoga Enthusiasts",
+    url: "/communities/2",
+    image: "img.jpg",
   },
   {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
+    id: 3,
+    name: "Plant Waterers",
+    url: "/communities/3",
+    image: "img.jpg",
+  },
+  {
+    id: 4,
+    name: "Study Buddies",
+    url: "/communities/4",
+    image: "img.jpg",
   },
 ];
 
 export function AppSidebar() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    // defaultValues: {
+    //   community: {
+    //     name: "",
+    //     tags: [],
+    //   },
+    //   group: {
+    //     name: "",
+    //     friends: [],
+    //   },
+    // },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+  }
+
+  const [open, setOpen] = React.useState(false);
+
   return (
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
+              <ModeToggle />
               <NavUser
                 user={{ name: "Kitty", email: "kitty@example.com", avatar: "" }}
               />
@@ -74,7 +167,7 @@ export function AppSidebar() {
                 <DialogTrigger asChild>
                   <SidebarMenuButton
                     tooltip="Quick Create"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+                    className="hover:text-primary-foreground active:text-primary-foreground min-w-8 duration-200 ease-linear"
                   >
                     <PlusCircleIcon />
                     <span>Quick Create</span>
@@ -87,24 +180,82 @@ export function AppSidebar() {
                       You can either create new or join existing communities.
                     </DialogDescription>
                   </DialogHeader>
-                  <CreateTabs />
+                  <CreateTabs form={form} />
                   <DialogFooter>
-                    <Button type="submit">Save changes</Button>
+                    <Button
+                      type="submit"
+                      onClick={() => onSubmit(form.getValues())}
+                    >
+                      Save changes
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <SidebarGroupLabel>Groups</SidebarGroupLabel>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <div>
+                    <Search />
+                    <Input />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  {allCommunities
+                    .filter((community) =>
+                      community.name
+                        .toLowerCase()
+                        .includes(
+                          form.watch("community.name")?.toLowerCase() || "",
+                        ),
+                    )
+                    .map((community) => (
+                      <Link href={community.url}>{community.name}</Link>
+                    ))}
+                </PopoverContent>
+              </Popover>
               <SidebarGroupLabel>Communities</SidebarGroupLabel>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {communities.map((community) => (
+                <SidebarMenuItem key={community.id}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                    <a href={community.url}>
+                      <Avatar className="h-8 w-8 rounded-lg grayscale">
+                        <AvatarImage
+                          src={community.image}
+                          alt={community.name}
+                        />
+                        <AvatarFallback className="rounded-lg">
+                          {community.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{community.name}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarGroupLabel>Groups</SidebarGroupLabel>
+              {groups.map((group) => (
+                <SidebarMenuItem key={group.id}>
+                  <SidebarMenuButton asChild>
+                    <a href={group.url}>
+                      <Avatar className="h-8 w-8 rounded-lg grayscale">
+                        <AvatarImage src={group.image} alt={group.name} />
+                        <AvatarFallback className="rounded-lg">
+                          {group.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{group.name}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              <Separator className="bg-sidebar-border mx-2 w-auto" />
+              <SidebarMenuItem key={"calendar"}>
+                <SidebarMenuButton asChild>
+                  <Link href={"/calendar"}>
+                    <Calendar />
+                    <span>Calendar</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

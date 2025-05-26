@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import { AppSidebar } from "~/components/app-sidebar";
+import { ScrollArea } from "./ui/scroll-area";
 
 export default function PageLayout({
   children,
@@ -9,11 +10,13 @@ export default function PageLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="flex min-h-screen flex-col items-center justify-center">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <SidebarTrigger />
-          {children}
-        </div>
+      <main className="flex w-full flex-col">
+        <ScrollArea className="h-screen">
+          <div className="container flex flex-col">
+            <SidebarTrigger />
+            {children}
+          </div>
+        </ScrollArea>
       </main>
     </SidebarProvider>
   );
