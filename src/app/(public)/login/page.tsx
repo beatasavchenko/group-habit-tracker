@@ -16,7 +16,7 @@ import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { signIn } from "auth";
 import { signInSchema } from "~/lib/signInSchema";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const router = useRouter();

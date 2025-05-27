@@ -32,9 +32,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TRPCReactProvider>
-            <HydrateClient>
-              <PageLayout>{children}</PageLayout>
-            </HydrateClient>
+            <HydrateClient>{children}</HydrateClient>
           </TRPCReactProvider>
         </ThemeProvider>
       </body>
