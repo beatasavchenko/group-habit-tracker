@@ -8,7 +8,13 @@ export async function findUserByEmail(email: string) {
     .from(users)
     .where(eq(users.email, email));
 
-  return user ?? null;
+  return user[0] ?? null;
+}
+
+export async function findUserById(id: number) {
+  const user = await db.selectDistinct().from(users).where(eq(users.id, id));
+
+  return user[0] ?? null;
 }
 
 export async function createUser(email: string) {
@@ -17,9 +23,10 @@ export async function createUser(email: string) {
     .values({
       email,
     })
-    .$dynamic();
+    .$returningId();
 
-  return user[0] ?? null;
+  if (!user[0]) return null;
+  return await findUserById(user[0]?.id);
 }
 
 export async function updateUser(
@@ -32,5 +39,6 @@ export async function updateUser(
     .where(eq(users.id, id))
     .$dynamic();
 
-  return user;
+  if (!user[0]) return null;
+  return await findUserById(user[0]?.insertId);
 }

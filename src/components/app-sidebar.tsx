@@ -193,12 +193,12 @@ export function AppSidebar() {
               </Dialog>
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                  <div>
-                    <Search />
+                  <Label className="relative h-10 w-full">
+                    <Search className="absolute top-1/2 left-3 z-10 -translate-y-1/2 transform text-gray-500" />
                     <Input />
-                  </div>
+                  </Label>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
+                <PopoverContent className="flex w-sm flex-col gap-4 border-0 p-0 py-4">
                   {allCommunities
                     .filter((community) =>
                       community.name

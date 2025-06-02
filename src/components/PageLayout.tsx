@@ -10,10 +10,9 @@ export default function PageLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="flex w-full flex-col">
+      <main className="mx-0 flex w-full flex-col px-0">
         <ScrollArea className="h-screen">
-          <div className="container flex flex-col">
-            <SidebarTrigger />
+          <div className="flex w-full flex-col">
             {children}
           </div>
         </ScrollArea>

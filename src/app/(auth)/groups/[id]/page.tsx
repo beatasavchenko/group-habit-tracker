@@ -23,8 +23,8 @@ import { api, HydrateClient } from "~/trpc/server";
 export default async function CommunityPage() {
   const community: Community = {
     id: 1,
-    name: "Water Drinkers",
-    url: "/communities/1",
+    name: "Family",
+    url: "/groups/1",
     image: "img.jpg",
   };
 
@@ -36,11 +36,13 @@ export default async function CommunityPage() {
           <div className="ml-auto">
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="px-4">Join</Button>
+                <Button className="px-4">Invite</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Join a community</DialogTitle>
+                  <DialogTitle>
+                    Invite your friends or family members to the group
+                  </DialogTitle>
                 </DialogHeader>
                 <DialogFooter>
                   <Button>Join</Button>

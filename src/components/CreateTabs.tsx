@@ -61,6 +61,8 @@ import {
   FormMessage,
 } from "./ui/form";
 import { formSchema } from "./app-sidebar";
+import { FriendsCombobox } from "./FriendsCombobox";
+import { SelectedFriends } from "./SelectedFriends";
 
 const tags: Tag[] = [
   {
@@ -140,19 +142,6 @@ const tags: Tag[] = [
   },
 ];
 
-const friends: Friend[] = [
-  {
-    id: 1,
-    name: "Alice",
-    image: "https://example.com/images/alice.jpg",
-  },
-  {
-    id: 2,
-    name: "Bob",
-    image: "https://example.com/images/bob.jpg",
-  },
-];
-
 export function CreateTabs({
   form,
 }: {
@@ -180,30 +169,6 @@ export function CreateTabs({
     setOpenGuests(false);
     setFriendEmails(undefined);
     form.reset();
-  }
-
-  const isValidEmail = (email: string) => {
-    const regex =
-      /^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_+-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/i;
-    return regex.test(email);
-  };
-
-  function addFriendEmail(email: string) {
-    const trimmed = email.trim();
-    if (!isValidEmail(trimmed) || friendEmails?.includes(trimmed)) return;
-    setFriendEmails([...(friendEmails ?? []), trimmed]);
-    setInputValue(""); // Clear input after valid email
-  }
-
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  function checkValue(value: string, e: React.KeyboardEvent<HTMLInputElement>) {
-    setInputValue(value);
-    const regex =
-      /^(?!\.)(?!.*\.\.)([a-z0-9_'+\-\.]*)[a-z0-9_+-]@([a-z0-9][a-z0-9\-]*\.)+[a-z]{2,}$/i;
-
-    if (!regex.test(value.trim())) return;
-    setFriendEmails([...(friendEmails ?? []), value.trim()]);
   }
 
   return (
@@ -377,103 +342,14 @@ export function CreateTabs({
                     <FormItem>
                       <FormLabel>Guests</FormLabel>
                       <FormControl>
-                        <Popover open={openGuests} onOpenChange={setOpenGuests}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openGuests}
-                              className="w-full justify-between"
-                            >
-                              {selectedFriends?.length
-                                ? friends
-                                    .filter((friend) =>
-                                      selectedFriends.includes(friend.id),
-                                    )
-                                    .map((friend) => friend.name)
-                                    .join(", ")
-                                : "Select friends..."}
-                              <ChevronsUpDown className="opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput
-                                ref={inputRef}
-                                value={inputValue}
-                                onValueChange={(value: string) =>
-                                  setInputValue(value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === " ") {
-                                    const email = inputValue.trim();
-                                    if (isValidEmail(email)) {
-                                      e.preventDefault();
-                                      addFriendEmail(email);
-                                    }
-                                  }
-                                }}
-                                placeholder="Search or invite a friend..."
-                              />
-                              <CommandList>
-                                <CommandEmpty className="text-clip">
-                                  Invite a friend by typing their email.
-                                </CommandEmpty>
-
-                                <CommandGroup>
-                                  {/* Friend Suggestions */}
-                                  {friends.map((friend) => (
-                                    <CommandItem
-                                      key={friend.id}
-                                      value={friend.id.toString()}
-                                      onSelect={(currentValue) => {
-                                        const id = Number(currentValue);
-                                        if (selectedFriends?.includes(id)) {
-                                          setSelectedFriends(
-                                            selectedFriends.filter(
-                                              (f) => f !== id,
-                                            ),
-                                          );
-                                        } else {
-                                          setSelectedFriends([
-                                            ...(selectedFriends ?? []),
-                                            id,
-                                          ]);
-                                        }
-                                      }}
-                                    >
-                                      {friend.name}
-                                      <Check
-                                        className={cn(
-                                          "ml-auto",
-                                          selectedFriends?.includes(friend.id)
-                                            ? "opacity-100"
-                                            : "opacity-0",
-                                        )}
-                                      />
-                                    </CommandItem>
-                                  ))}
-
-                                  {/* Email Option */}
-                                  {isValidEmail(inputValue.trim()) &&
-                                    !friendEmails?.includes(
-                                      inputValue.trim(),
-                                    ) && (
-                                      <CommandItem
-                                        value="email"
-                                        className="text-blue-600"
-                                        onSelect={() =>
-                                          addFriendEmail(inputValue.trim())
-                                        }
-                                      >
-                                        Invite "{inputValue.trim()}" via email
-                                      </CommandItem>
-                                    )}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                        <FriendsCombobox
+                          openGuests={openGuests}
+                          setOpenGuests={setOpenGuests}
+                          setFriendEmails={setFriendEmails}
+                          selectedFriends={selectedFriends}
+                          setSelectedFriends={setSelectedFriends}
+                          friendEmails={friendEmails}
+                        />
                       </FormControl>
                       <FormDescription>
                         This is your public display name.
@@ -482,22 +358,7 @@ export function CreateTabs({
                     </FormItem>
                   )}
                 />
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {[
-                    ...friends
-                      .filter((friend) => selectedFriends?.includes(friend.id))
-                      .map((friend) => ({
-                        key: friend.id,
-                        label: friend.name,
-                      })),
-                    ...(friendEmails?.map((email) => ({
-                      key: email,
-                      label: email,
-                    })) || []),
-                  ].map(({ key, label }) => (
-                    <Badge key={key}>{label}</Badge>
-                  ))}
-                </div>
+                <SelectedFriends />
               </form>
             </Form>
           </CardContent>

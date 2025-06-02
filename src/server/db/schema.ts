@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
+import { is, sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
@@ -31,6 +31,7 @@ export const users = createTable(
     email: text("email").notNull().unique(),
     code: text("code"),
     isVerified: boolean().notNull().default(false),
+    friends: text("friends").$type<number[]>(),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp().$onUpdate(() => new Date()),
   },
@@ -38,5 +39,63 @@ export const users = createTable(
     return [index("email").on(t.email)];
   },
 );
-
 export type DB_UserType = typeof users.$inferSelect;
+
+export const tags = createTable("tags", {
+  id: bigint("id", { mode: "number", unsigned: true })
+    .primaryKey()
+    .autoincrement(),
+  icon: text("icon"),
+  name: text("name"),
+  createdAt: timestamp().defaultNow().notNull(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+});
+
+export const groups = createTable("groups", {
+  id: bigint("id", { mode: "number", unsigned: true })
+    .primaryKey()
+    .autoincrement(),
+  name: text("name"),
+  members: text("members").$type<number[]>(),
+  image: text("image"),
+  habits: text("habits").$type<number[]>(),
+  createdAt: timestamp().defaultNow().notNull(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+});
+
+export const communities = createTable("communities", {
+  id: bigint("id", { mode: "number", unsigned: true })
+    .primaryKey()
+    .autoincrement(),
+  name: text("name"),
+  tags: text("tags").$type<number[]>(),
+  members: text("members").$type<number[]>(),
+  image: text("image"),
+  createdAt: timestamp().defaultNow().notNull(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+});
+
+export const habits = createTable("habit", {
+  id: bigint("id", { mode: "number", unsigned: true })
+    .primaryKey()
+    .autoincrement(),
+  name: text("name"),
+  description: text("description"),
+  basicGoal: text("basicGoal").$type<string>(),
+  createdAt: timestamp().defaultNow().notNull(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+});
+
+export const personalHabit = createTable("habit", {
+  id: bigint("id", { mode: "number", unsigned: true })
+    .primaryKey()
+    .autoincrement(),
+  habitId: bigint("habitId", { mode: "number", unsigned: true }),
+  userId: bigint("userId", { mode: "number", unsigned: true }),
+  groupId: bigint("groupId", { mode: "number", unsigned: true }),
+  personalGoal: text("personalGoal").$type<string>(),
+  basicGoal: text("basicGoal").$type<string>(),
+  isCompleted: boolean().notNull().default(false),
+  createdAt: timestamp().defaultNow().notNull(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+});
