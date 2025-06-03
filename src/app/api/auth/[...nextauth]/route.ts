@@ -1,48 +1,52 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
+import type { SessionStrategy } from "next-auth";
+import GitHubProvider from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import { z } from "zod";
+import { db } from "~/server/db"; // your db logic (SingleStore)
+import { findUserByEmail } from "~/server/services/userService";
 
-export const providers = [
-  GoogleProvider({
-    clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-  }),
-  CredentialsProvider({
-    // The name to display on the sign in form (e.g. 'Sign in with...')
-    name: "Credentials",
-    // The credentials is used to generate a suitable form on the sign in page.
-    // You can specify whatever fields you are expecting to be submitted.
-    // e.g. domain, username, password, 2FA token, etc.
-    // You can pass any HTML attribute to the <input> tag through the object.
-    credentials: {
-      email: { label: "Email", type: "text", placeholder: "email@example.com" },
-    },
-    async authorize(credentials, req) {
-      // You need to provide your own logic here that takes the credentials
-      // submitted and returns either a object representing a user or value
-      // that is false/null if the credentials are invalid.
-      // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
-      // You can also use the `req` object to obtain additional parameters
-      // (i.e., the request IP address)
-      const res = await fetch("/your/endpoint", {
-        method: "POST",
-        body: JSON.stringify(credentials),
-        headers: { "Content-Type": "application/json" },
-      });
-      const user = await res.json();
+export const authOptions = {
+  providers: [
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
+    Google({
+      clientId: process.env.GOOGLE_ID!,
+      clientSecret: process.env.GOOGLE_SECRET!,
+    }),
+    Credentials({
+      name: "Email Login",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        // code: { label: "OTP Code", type: "text" },
+      },
+      async authorize(credentials, req) {
+        const { email } = credentials as { email: string; code: string };
 
-      // If no error and we have user data, return it
-      if (res.ok && user) {
-        return user;
-      }
-      // Return null if user data could not be retrieved
-      return null;
-    },
-  }),
-];
+        const user = await findUserByEmail(email);
 
-const handler = NextAuth({
-  providers,
-});
+        // if (!user || user.otp !== code) return null;
 
+        if(!user) return null;
+
+        return {
+          id: String(user.id),
+          email: user.email,
+        };
+      },
+    }),
+  ],
+  secret: process.env.AUTH_SECRET,
+  session: {
+    strategy: "jwt" as SessionStrategy,
+  },
+  pages: {
+    signIn: "/login",
+  },
+};
+
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

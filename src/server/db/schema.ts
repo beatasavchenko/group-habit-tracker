@@ -6,6 +6,7 @@ import {
   bigint,
   boolean,
   index,
+  singlestoreTable,
   singlestoreTableCreator,
   text,
   timestamp,
@@ -27,8 +28,8 @@ export const users = createTable(
     id: bigint("id", { mode: "number", unsigned: true })
       .primaryKey()
       .autoincrement(),
-    name: text("name"),
-    email: text("email").notNull().unique(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
     code: text("code"),
     isVerified: boolean().notNull().default(false),
     friends: text("friends").$type<number[]>(),
@@ -36,7 +37,10 @@ export const users = createTable(
     updatedAt: timestamp().$onUpdate(() => new Date()),
   },
   (t) => {
-    return [index("email").on(t.email)];
+    return [
+      index("email").on(t.email),
+      sql`UNIQUE KEY users_email_unique (id, email)`,
+    ];
   },
 );
 export type DB_UserType = typeof users.$inferSelect;
@@ -75,7 +79,7 @@ export const communities = createTable("communities", {
   updatedAt: timestamp().$onUpdate(() => new Date()),
 });
 
-export const habits = createTable("habit", {
+export const habits = createTable("habits", {
   id: bigint("id", { mode: "number", unsigned: true })
     .primaryKey()
     .autoincrement(),
@@ -86,7 +90,7 @@ export const habits = createTable("habit", {
   updatedAt: timestamp().$onUpdate(() => new Date()),
 });
 
-export const personalHabit = createTable("habit", {
+export const personalHabit = createTable("personalHabits", {
   id: bigint("id", { mode: "number", unsigned: true })
     .primaryKey()
     .autoincrement(),

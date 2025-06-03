@@ -6,7 +6,9 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/components/theme-provider";
 import { HydrateClient } from "~/trpc/server";
+import { SessionProvider } from "next-auth/react";
 import PageLayout from "~/components/PageLayout";
+import LayoutWrapper from "./layoutWrapper";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -32,7 +34,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TRPCReactProvider>
-            <HydrateClient>{children}</HydrateClient>
+            <HydrateClient>
+              <LayoutWrapper>{children}</LayoutWrapper>
+            </HydrateClient>
           </TRPCReactProvider>
         </ThemeProvider>
       </body>
