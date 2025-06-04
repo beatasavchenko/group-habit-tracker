@@ -7,9 +7,6 @@ export const signInSchema = object({
       .email("Invalid email"),
   }),
   step2: object({
-    code: string({ required_error: "Code is required" }).length(
-      6,
-      "Code must be 6 characters long",
-    ),
+    code: string({ required_error: "Code is required" }).regex(/^\d{6}$/, "Code must be exactly 6 digits"),
   }),
 });

@@ -1,15 +1,13 @@
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { users } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
-import { loginOrRegisterByEmail } from "~/server/services/authService";
+import { verify } from "~/server/services/authService";
 
 export const authRouter = createTRPCRouter({
-  loginOrRegister: publicProcedure
+  verify: publicProcedure
     .input(z.object({ email: z.string().email() }))
     .mutation(async ({ ctx, input }) => {
-      const res = await loginOrRegisterByEmail(input.email);
+      const res = await verify(input.email);
       return res ?? null;
     }),
 

@@ -31,7 +31,12 @@ export async function createUser(email: string) {
 
 export async function updateUser(
   id: number,
-  data: Partial<{ email: string; code: string; isVerified: boolean }>,
+  data: Partial<{
+    email: string;
+    code: string | null;
+    isVerified: boolean;
+    codeExpiresAt: Date | null;
+  }>,
 ) {
   const user = await db
     .update(users)

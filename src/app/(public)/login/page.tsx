@@ -18,16 +18,28 @@ import { signIn } from "next-auth/react";
 import { signInSchema } from "~/lib/signInSchema";
 import { useRouter } from "next/navigation";
 import React, {
+  useEffect,
   useRef,
   useState,
   type ChangeEvent,
   type RefObject,
 } from "react";
+import { api } from "~/trpc/react";
 
 const codeLength = 6;
 
 export default function Login() {
   const router = useRouter();
+
+  const verify = api.auth.verify.useMutation({
+    onSuccess: (data) => {
+      setStep(2);
+      form.reset();
+    },
+    onError: (error) => {
+      console.error("Error during verification:", error);
+    },
+  });
 
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -98,28 +110,45 @@ export default function Login() {
     }
   }
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pastedCode = e.clipboardData.getData("text");
-    if (pastedCode.length === 6) {
-      setCode(pastedCode);
-      inputRefs.forEach(
-        (inputRef: RefObject<HTMLInputElement | null>, index: number) => {
-          if (inputRef.current) {
-            inputRef.current.value = pastedCode.charAt(index);
-          }
-        },
-      );
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    if (index !== 0) return;
+
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    setCode(pasted);
+
+    inputRefs.forEach((ref, i) => {
+      if (ref.current) {
+        ref.current.value = pasted[i] || "";
+      }
+    });
+
+    // Focus next input after paste
+    const focusRef = inputRefs[pasted.length - 1];
+    if (pasted.length > 0 && focusRef?.current) {
+      focusRef.current.focus();
     }
   };
 
   const [step, setStep] = useState(1);
 
+  const email = form.watch("step1.email");
+
   const handleNextStep = async () => {
     const isValid = await form.trigger("step1.email");
     if (!isValid) return;
-    setStep(2);
-    form.reset();
+    await verify.mutateAsync({ email });
   };
+
+  useEffect(() => {
+    form.setValue("step2.code", code);
+  }, [code, form]);
 
   return (
     <div className="mx-4 flex h-fit items-center justify-center pt-14">
@@ -132,6 +161,7 @@ export default function Login() {
             <>
               <Button
                 variant="outline"
+                type="button"
                 className="w-full"
                 onClick={() => signIn("github")}
               >
@@ -139,6 +169,7 @@ export default function Login() {
               </Button>
               <Button
                 variant="outline"
+                type="button"
                 className="w-full"
                 onClick={() => signIn("google")}
               >
@@ -151,8 +182,12 @@ export default function Login() {
               className="space-y-6 text-right"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (step === 2) {
-                  console.log("Submitted code:", code);
+                if (step === 2 && code.length === 6) {
+                  signIn("credentials", {
+                    email,
+                    code,
+                    redirect: true,
+                  });
                 }
               }}
             >
@@ -197,7 +232,7 @@ export default function Login() {
                                 autoFocus={index === 0}
                                 onFocus={handleFocus}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
-                                onPaste={handlePaste}
+                                onPaste={(e) => handlePaste(e, index)}
                               />
                             ),
                           )}
@@ -228,15 +263,21 @@ export default function Login() {
                   </Button>
                 )}
                 {step === 2 && (
-                  <Button
-                    variant={"ghost"}
-                    onClick={() => {
-                      setStep(1);
-                      form.reset();
-                    }}
-                  >
-                    Choose another method
-                  </Button>
+                  <div>
+                    <Button variant={"ghost"} type="button" onClick={() => {}}>
+                      Resend the code
+                    </Button>
+                    <Button
+                      variant={"ghost"}
+                      type="button"
+                      onClick={() => {
+                        setStep(1);
+                        form.reset();
+                      }}
+                    >
+                      Choose another method
+                    </Button>
+                  </div>
                 )}
               </div>
             </form>

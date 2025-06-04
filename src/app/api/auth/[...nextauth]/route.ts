@@ -5,7 +5,7 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { db } from "~/server/db"; // your db logic (SingleStore)
-import { findUserByEmail } from "~/server/services/userService";
+import { findUserByEmail, updateUser } from "~/server/services/userService";
 
 export const authOptions = {
   providers: [
@@ -21,19 +21,27 @@ export const authOptions = {
       name: "Email Login",
       credentials: {
         email: { label: "Email", type: "email" },
-        // code: { label: "OTP Code", type: "text" },
+        code: { label: "OTP Code", type: "text" },
       },
-      async authorize(credentials, req) {
-        const { email } = credentials as { email: string; code: string };
+      async authorize(credentials) {
+        console.log("Authorizing with credentials:", credentials);
 
-        const user = await findUserByEmail(email);
+        if (!credentials?.email || !credentials?.code) return null;
+        let user = await findUserByEmail(credentials.email);
+        if (!user) return null;
 
-        // if (!user || user.otp !== code) return null;
+        if (user.code !== credentials.code) {
+          throw new Error("Invalid OTP code");
+        }
 
-        if(!user) return null;
-
+        await updateUser(user.id, {
+          isVerified: true,
+          code: null,
+          codeExpiresAt: null,
+        });
         return {
-          id: String(user.id),
+          id: user.id.toString(),
+          name: user.name || user.email.split("@")[0],
           email: user.email,
         };
       },
@@ -42,6 +50,9 @@ export const authOptions = {
   secret: process.env.AUTH_SECRET,
   session: {
     strategy: "jwt" as SessionStrategy,
+  },
+  redirect: {
+    sigIn: "/"
   },
   pages: {
     signIn: "/login",

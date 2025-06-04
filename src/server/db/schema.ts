@@ -28,9 +28,10 @@ export const users = createTable(
     id: bigint("id", { mode: "number", unsigned: true })
       .primaryKey()
       .autoincrement(),
-    name: text("name").notNull(),
+    name: text("name"),
     email: text("email").notNull(),
     code: text("code"),
+    codeExpiresAt: timestamp("codeExpiresAt").defaultNow(),
     isVerified: boolean().notNull().default(false),
     friends: text("friends").$type<number[]>(),
     createdAt: timestamp().defaultNow().notNull(),
