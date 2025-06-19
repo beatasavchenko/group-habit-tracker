@@ -7,6 +7,7 @@ import {
   Command,
   Home,
   Inbox,
+  LogOut,
   PlusCircleIcon,
   Search,
   Settings,
@@ -54,6 +55,8 @@ import React from "react";
 import { ModeToggle } from "./ui/mode-toggle";
 import Link from "next/link";
 import { Separator } from "@radix-ui/react-separator";
+import { signOut } from "next-auth/react";
+import { redirect } from "next/dist/server/api-utils";
 
 const communitySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -208,7 +211,9 @@ export function AppSidebar() {
                         ),
                     )
                     .map((community) => (
-                      <Link href={community.url}>{community.name}</Link>
+                      <Link key={community.id} href={community.url}>
+                        {community.name}
+                      </Link>
                     ))}
                 </PopoverContent>
               </Popover>
@@ -254,6 +259,21 @@ export function AppSidebar() {
                     <Calendar />
                     <span>Calendar</span>
                   </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem key={"logout"}>
+                <SidebarMenuButton asChild>
+                  <Button
+                    onClick={async () => {
+                      await signOut({
+                        redirect: true,
+                        callbackUrl: "/login",
+                      });
+                    }}
+                  >
+                    <LogOut />
+                    <span>Logout</span>
+                  </Button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

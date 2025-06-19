@@ -154,7 +154,7 @@ export function FriendsCombobox(props: FriendsComboboxProps) {
                     className="text-blue-600"
                     onSelect={() => addFriendEmail(inputValue.trim())}
                   >
-                    Invite "{inputValue.trim()}" via email
+                    Invite &quot;{inputValue.trim()}&quot; via email
                   </CommandItem>
                 )}
             </CommandGroup>

@@ -80,9 +80,9 @@ export default function Login() {
 
     input.select();
 
-    if (input.value === "" && previousInput && previousInput.current) {
+    if (input.value === "" && previousInput?.current) {
       previousInput.current.focus();
-    } else if (nextInput && nextInput.current) {
+    } else if (nextInput?.current) {
       nextInput.current.select();
     }
   }
@@ -104,7 +104,7 @@ export default function Login() {
       setCode(
         (prevCode) => prevCode.slice(0, index) + prevCode.slice(index + 1),
       );
-      if (previousInput && previousInput.current) {
+      if (previousInput?.current) {
         previousInput.current.focus();
       }
     }
@@ -125,7 +125,7 @@ export default function Login() {
 
     inputRefs.forEach((ref, i) => {
       if (ref.current) {
-        ref.current.value = pasted[i] || "";
+        ref.current.value = pasted[i] ?? "";
       }
     });
 
@@ -163,7 +163,7 @@ export default function Login() {
                 variant="outline"
                 type="button"
                 className="w-full"
-                onClick={() => signIn("github")}
+                onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
               >
                 Sign in with GitHub
               </Button>
@@ -171,7 +171,7 @@ export default function Login() {
                 variant="outline"
                 type="button"
                 className="w-full"
-                onClick={() => signIn("google")}
+                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               >
                 Sign in with Google
               </Button>
@@ -180,13 +180,14 @@ export default function Login() {
           <Form {...form}>
             <form
               className="space-y-6 text-right"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 if (step === 2 && code.length === 6) {
-                  signIn("credentials", {
+                  await signIn("credentials", {
                     email,
                     code,
                     redirect: true,
+                    callbackUrl: "/dashboard",
                   });
                 }
               }}
@@ -224,7 +225,7 @@ export default function Login() {
                                 {...field}
                                 key={index}
                                 ref={inputRefs[index]}
-                                value={code[index] || ""}
+                                value={code[index] ?? ""}
                                 type="number"
                                 maxLength={1}
                                 onChange={(e) => handleInput(e, index)}
@@ -264,7 +265,11 @@ export default function Login() {
                 )}
                 {step === 2 && (
                   <div>
-                    <Button variant={"ghost"} type="button" onClick={() => {}}>
+                    <Button
+                      variant={"ghost"}
+                      type="button"
+                      // onClick={() => {}}
+                    >
                       Resend the code
                     </Button>
                     <Button

@@ -33,7 +33,7 @@ export function SelectedFriends(props: SelectedFriendsProps) {
         ...(friendEmails?.map((email) => ({
           key: email,
           label: email,
-        })) || []),
+        })) ?? []),
       ].map(({ key, label }) => (
         <Badge key={key}>{label}</Badge>
       ))}
