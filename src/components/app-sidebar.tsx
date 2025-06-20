@@ -170,7 +170,7 @@ export function AppSidebar() {
                 <DialogTrigger asChild>
                   <SidebarMenuButton
                     tooltip="Quick Create"
-                    className="hover:text-primary-foreground active:text-primary-foreground min-w-8 duration-200 ease-linear"
+                    className="h-10 min-w-8 duration-200 ease-linear"
                   >
                     <PlusCircleIcon />
                     <span>Quick Create</span>

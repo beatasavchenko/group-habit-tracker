@@ -61,8 +61,8 @@ import {
   FormMessage,
 } from "./ui/form";
 import { formSchema } from "./app-sidebar";
-import { FriendsCombobox } from "./FriendsCombobox";
 import { SelectedFriends } from "./SelectedFriends";
+import ComboboxComponent from "./ComboboxComponent";
 
 const tags: Tag[] = [
   {
@@ -142,6 +142,19 @@ const tags: Tag[] = [
   },
 ];
 
+const friends: Friend[] = [
+  {
+    id: 1,
+    name: "Alice",
+    image: "https://example.com/images/alice.jpg",
+  },
+  {
+    id: 2,
+    name: "Bob",
+    image: "https://example.com/images/bob.jpg",
+  },
+];
+
 export function CreateTabs({
   form,
 }: {
@@ -213,78 +226,15 @@ export function CreateTabs({
                   control={form.control}
                   name="community.tags"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags</FormLabel>
-                      <FormControl>
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={open}
-                              className="w-full justify-between"
-                            >
-                              {selectedTags?.length
-                                ? tags
-                                    .filter((tag) =>
-                                      selectedTags.includes(tag.value),
-                                    )
-                                    .map((tag) => tag.label)
-                                    .join(", ")
-                                : "Select tags..."}
-                              <ChevronsUpDown className="opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="Search a tag..." />
-                              <CommandList>
-                                <CommandEmpty>No tag found.</CommandEmpty>
-                                <CommandGroup>
-                                  {tags.map((tag) => (
-                                    <CommandItem
-                                      key={tag.value}
-                                      value={tag.value}
-                                      onSelect={(currentValue) => {
-                                        if (
-                                          selectedTags?.includes(currentValue)
-                                        ) {
-                                          setSelectedTags(
-                                            selectedTags.filter(
-                                              (tag) => tag !== currentValue,
-                                            ),
-                                          );
-                                        } else {
-                                          setSelectedTags([
-                                            ...(selectedTags ?? []),
-                                            currentValue,
-                                          ]);
-                                        }
-                                      }}
-                                    >
-                                      {tag.icon}
-                                      {tag.label}
-                                      <Check
-                                        className={cn(
-                                          "ml-auto",
-                                          selectedTags?.includes(tag.value)
-                                            ? "opacity-100"
-                                            : "opacity-0",
-                                        )}
-                                      />
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <FormDescription>
-                        This is your public display name.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                    <ComboboxComponent
+                      label="Tags"
+                      items={tags}
+                      selectedValues={selectedTags}
+                      setSelectedValues={setSelectedTags}
+                      getItemValue={(tag: Tag) => tag.value}
+                      getItemLabel={(tag: Tag) => tag.label}
+                      placeholder="Search tags..."
+                    />
                   )}
                 />
 
@@ -342,13 +292,24 @@ export function CreateTabs({
                     <FormItem>
                       <FormLabel>Guests</FormLabel>
                       <FormControl>
-                        <FriendsCombobox
-                          openGuests={openGuests}
-                          setOpenGuests={setOpenGuests}
-                          setFriendEmails={setFriendEmails}
-                          selectedFriends={selectedFriends}
-                          setSelectedFriends={setSelectedFriends}
-                          friendEmails={friendEmails}
+                        <ComboboxComponent
+                          label="Invite friends"
+                          items={friends}
+                          selectedValues={selectedFriends?.map(String)}
+                          setSelectedValues={(ids) => {
+                            if (Array.isArray(ids)) {
+                              setSelectedFriends(ids.map(Number));
+                            }
+                          }}
+                          getItemValue={(friend: Friend) =>
+                            friend.id.toString()
+                          }
+                          getItemLabel={(friend: Friend) => friend.name}
+                          placeholder="Search or invite..."
+                          allowCustomInput
+                          onCustomValueAdd={(email) =>
+                            setFriendEmails([...(friendEmails ?? []), email])
+                          }
                         />
                       </FormControl>
                       <FormDescription>
