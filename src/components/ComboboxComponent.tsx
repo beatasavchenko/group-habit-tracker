@@ -18,6 +18,8 @@ type ComboboxComponentProps<T> = {
   setSelectedValues: React.Dispatch<React.SetStateAction<string[] | undefined>>;
   getItemValue: (item: T) => string;
   getItemLabel: (item: T) => string;
+  inputValue: string;
+  setInputValue: React.Dispatch<React.SetStateAction<string>>;
   label?: string;
   description?: string;
   placeholder?: string;
@@ -32,6 +34,8 @@ export default function ComboboxComponent<T>({
   setSelectedValues,
   getItemValue,
   getItemLabel,
+  inputValue,
+  setInputValue,
   label = "Select items",
   description,
   placeholder = "Search...",
@@ -40,7 +44,6 @@ export default function ComboboxComponent<T>({
   renderItem,
 }: ComboboxComponentProps<T>) {
   const [open, setOpen] = React.useState(false);
-  const [inputValue, setInputValue] = React.useState("");
 
   const inputRef = React.useRef<HTMLInputElement>(null);
 

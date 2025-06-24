@@ -28,7 +28,9 @@ export const users = createTable(
     id: bigint("id", { mode: "number", unsigned: true })
       .primaryKey()
       .autoincrement(),
+    username: text("username").notNull(),
     name: text("name"),
+    image: text("image"),
     email: text("email").notNull(),
     code: text("code"),
     codeExpiresAt: timestamp("codeExpiresAt").defaultNow(),
@@ -39,8 +41,10 @@ export const users = createTable(
   },
   (t) => {
     return [
-      index("email").on(t.email),
-      sql`UNIQUE KEY users_email_unique (id, email)`,
+      index("email_idx").on(t.email),
+      index("username_idx").on(t.username),
+      sql`UNIQUE KEY users_email_unique (email)`,
+      sql`UNIQUE KEY users_username_unique (username)`,
     ];
   },
 );

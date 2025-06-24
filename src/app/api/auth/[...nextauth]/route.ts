@@ -1,12 +1,27 @@
 import NextAuth from "next-auth";
-import type { NextAuthOptions, SessionStrategy } from "next-auth";
+import type { NextAuthOptions, SessionStrategy, User } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { db } from "~/server/db"; // your db logic (SingleStore)
-import { findUserByEmail, updateUser } from "~/server/services/userService";
+import {
+  createUser,
+  findUserByEmail,
+  updateUser,
+} from "~/server/services/userService";
 import type { NextApiHandler } from "next";
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: number;
+      username?: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -48,6 +63,34 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  callbacks: {
+    signIn: async ({ user, account, profile }) => {
+      if (!user.email) return false;
+
+      let existingUser = await findUserByEmail(user.email);
+      if (!existingUser) {
+        existingUser = await createUser({
+          name: user.name ?? user.email?.split("@")[0],
+          email: user.email,
+        });
+      }
+      if (!existingUser) return false;
+      await updateUser(existingUser.id, {
+        isVerified: true,
+      });
+
+      return true;
+    },
+    async session({ session, token, user }) {
+      // Fetch user data from DB based on token or email
+      const dbUser = await findUserByEmail(session.user.email ?? "");
+      if (dbUser) {
+        session.user.id = dbUser.id;
+        session.user.username = dbUser.username;
+      }
+      return session;
+    },
+  },
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt" as SessionStrategy,

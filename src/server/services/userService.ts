@@ -1,6 +1,12 @@
 import { eq } from "drizzle-orm";
-import { users } from "~/server/db/schema";
+import { users, type DB_UserType } from "~/server/db/schema";
 import { db } from "~/server/db";
+import {
+  uniqueNamesGenerator,
+  adjectives,
+  animals,
+  NumberDictionary,
+} from "unique-names-generator";
 
 export async function findUserByEmail(email: string) {
   const user = await db
@@ -17,11 +23,27 @@ export async function findUserById(id: number) {
   return user[0] ?? null;
 }
 
-export async function createUser(email: string) {
+export async function createUser(userToCreate: Partial<DB_UserType>) {
+  if (!userToCreate.email) {
+    return null;
+  }
+  const numberDictionary = NumberDictionary.generate({ min: 100, max: 999 });
+  const username = uniqueNamesGenerator({
+    dictionaries: [adjectives, animals, numberDictionary],
+    separator: "",
+    style: "lowerCase",
+    length: 3,
+  });
+
   const user = await db
     .insert(users)
     .values({
-      email,
+      ...userToCreate,
+      email: userToCreate.email,
+      username,
+      isVerified: false,
+      code: null,
+      codeExpiresAt: null,
     })
     .$returningId();
 
@@ -46,4 +68,13 @@ export async function updateUser(
 
   if (!user[0]) return null;
   return await findUserById(user[0]?.insertId);
+}
+
+export async function getUsersByUsername(username: string) {
+  const usersList = await db
+    .selectDistinct()
+    .from(users)
+    .where(eq(users.username, username));
+
+  return usersList.length > 0 ? usersList : null;
 }

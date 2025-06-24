@@ -55,8 +55,9 @@ import React from "react";
 import { ModeToggle } from "./ui/mode-toggle";
 import Link from "next/link";
 import { Separator } from "@radix-ui/react-separator";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { redirect } from "next/dist/server/api-utils";
+import { api } from "~/trpc/react";
 
 const communitySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -155,6 +156,10 @@ export function AppSidebar() {
   }
 
   const [open, setOpen] = React.useState(false);
+
+  const updateUser = api.user.updateUser.useMutation();
+
+  const { data: session } = useSession();
 
   return (
     <Sidebar>
@@ -265,6 +270,13 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild>
                   <Button
                     onClick={async () => {
+                      console.log("sesh", session);
+
+                      if (!session) return;
+                      updateUser.mutateAsync({
+                        id: session.user.id,
+                        isVerified: false,
+                      });
                       await signOut({
                         redirect: true,
                         callbackUrl: "/login",

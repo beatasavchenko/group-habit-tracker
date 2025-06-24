@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -63,6 +63,8 @@ import {
 import { formSchema } from "./app-sidebar";
 import { SelectedFriends } from "./SelectedFriends";
 import ComboboxComponent from "./ComboboxComponent";
+import { api } from "~/trpc/react";
+import type { DB_UserType } from "~/server/db/schema";
 
 const tags: Tag[] = [
   {
@@ -142,19 +144,6 @@ const tags: Tag[] = [
   },
 ];
 
-const friends: Friend[] = [
-  {
-    id: 1,
-    name: "Alice",
-    image: "https://example.com/images/alice.jpg",
-  },
-  {
-    id: 2,
-    name: "Bob",
-    image: "https://example.com/images/bob.jpg",
-  },
-];
-
 export function CreateTabs({
   form,
 }: {
@@ -173,8 +162,6 @@ export function CreateTabs({
     string[] | undefined
   >();
 
-  const [inputValue, setInputValue] = React.useState("");
-
   function onTabChange() {
     setSelectedTags(undefined);
     setSelectedFriends(undefined);
@@ -183,6 +170,28 @@ export function CreateTabs({
     setFriendEmails(undefined);
     form.reset();
   }
+
+  const [inputValue, setInputValue] = React.useState("");
+
+  const friends = api.user.getUsersByUsername.useMutation();
+
+  useEffect(() => {
+    friends.mutate(
+      { username: inputValue },
+      {
+        onSuccess: (data) => {
+          if (data) {
+            const filteredData = data.filter(
+              (friend: DB_UserType) =>
+                !selectedFriends?.includes(friend.id) &&
+                !friendEmails?.includes(friend.email),
+            );
+            friends.data = filteredData;
+          }
+        },
+      },
+    );
+  }, [inputValue]);
 
   return (
     <Tabs defaultValue="community" onValueChange={onTabChange} className="">
@@ -231,6 +240,8 @@ export function CreateTabs({
                       items={tags}
                       selectedValues={selectedTags}
                       setSelectedValues={setSelectedTags}
+                      inputValue={inputValue}
+                      setInputValue={setInputValue}
                       getItemValue={(tag: Tag) => tag.value}
                       getItemLabel={(tag: Tag) => tag.label}
                       placeholder="Search tags..."
@@ -290,21 +301,24 @@ export function CreateTabs({
                   name="group.friends"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Guests</FormLabel>
                       <FormControl>
                         <ComboboxComponent
-                          label="Invite friends"
-                          items={friends}
+                          label="Guests"
+                          items={friends.data ?? []}
                           selectedValues={selectedFriends?.map(String)}
                           setSelectedValues={(ids) => {
                             if (Array.isArray(ids)) {
                               setSelectedFriends(ids.map(Number));
                             }
                           }}
-                          getItemValue={(friend: Friend) =>
+                          getItemValue={(friend: DB_UserType) =>
                             friend.id.toString()
                           }
-                          getItemLabel={(friend: Friend) => friend.name}
+                          getItemLabel={(friend: DB_UserType) =>
+                            friend.username
+                          }
+                          inputValue={inputValue}
+                          setInputValue={setInputValue}
                           placeholder="Search or invite..."
                           allowCustomInput
                           onCustomValueAdd={(email) =>
@@ -312,9 +326,6 @@ export function CreateTabs({
                           }
                         />
                       </FormControl>
-                      <FormDescription>
-                        This is your public display name.
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
