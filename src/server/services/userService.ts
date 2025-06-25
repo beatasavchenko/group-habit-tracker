@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, like, sql } from "drizzle-orm";
 import { users, type DB_UserType } from "~/server/db/schema";
 import { db } from "~/server/db";
 import {
@@ -74,7 +74,7 @@ export async function getUsersByUsername(username: string) {
   const usersList = await db
     .selectDistinct()
     .from(users)
-    .where(eq(users.username, username));
+    .where(like(sql`LOWER(${users.username})`, `%${username.toLowerCase()}%`));
 
   return usersList.length > 0 ? usersList : null;
 }

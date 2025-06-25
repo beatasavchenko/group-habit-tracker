@@ -1,0 +1,1 @@
+DROP TABLE `group-habit-tracker_tags`;

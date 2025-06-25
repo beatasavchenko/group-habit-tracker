@@ -9,13 +9,6 @@ import {
 } from "~/server/services/userService";
 
 export const userRouter = createTRPCRouter({
-  createUser: publicProcedure
-    .input(z.object({ name: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      return {
-        greeting: "Hello",
-      };
-    }),
   updateUser: publicProcedure
     .input(Partial_DB_UserType_Zod)
     .mutation(async ({ ctx, input }) => {
@@ -23,8 +16,8 @@ export const userRouter = createTRPCRouter({
       return res ?? null;
     }),
   getUsersByUsername: publicProcedure
-    .input(z.object({ username: z.string() }).nullable())
-    .mutation(async ({ ctx, input }) => {
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
       if (!input) return [];
       const res = await getUsersByUsername(input.username);
       return res ?? null;

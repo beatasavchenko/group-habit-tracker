@@ -112,18 +112,20 @@ export default function ComboboxComponent<T>({
               }}
             />
             <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
+              {/* <CommandEmpty>No results found.</CommandEmpty> */}
               <CommandGroup>
                 {items.map((item) => {
                   const value = getItemValue(item);
                   const label = getItemLabel(item);
+
                   return (
                     <CommandItem
                       key={value}
                       value={value}
                       onSelect={() => toggleSelection(value)}
                     >
-                      {renderItem ? renderItem(item) : label}
+                      {/* {renderItem ? renderItem(item) : label} */}
+                      <span className="truncate">{label}</span>
                       <Check
                         className={cn(
                           "ml-auto h-4 w-4",

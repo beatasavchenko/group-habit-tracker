@@ -34,7 +34,7 @@ export default function Login() {
   const verify = api.auth.verify.useMutation({
     onSuccess: (data) => {
       setStep(2);
-      form.reset();
+      form.resetField("step2.code");
     },
     onError: (error) => {
       console.error("Error during verification:", error);
@@ -150,6 +150,19 @@ export default function Login() {
     form.setValue("step2.code", code);
   }, [code, form]);
 
+  const onSubmit = async (data: z.infer<typeof signInSchema>) => {
+    if (step === 2 && data.step2.code.length === 6) {
+      await signIn("credentials", {
+        email: data.step1.email,
+        code: data.step2.code,
+        redirect: true,
+        callbackUrl: "/dashboard",
+      });
+    }
+  };
+
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
+
   return (
     <div className="mx-4 flex h-fit items-center justify-center pt-14">
       <Card>
@@ -161,17 +174,27 @@ export default function Login() {
             <>
               <Button
                 variant="outline"
-                type="button"
                 className="w-full"
-                onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+                disabled={isAuthSubmitting}
+                onClick={async () => {
+                  setIsAuthSubmitting(true);
+                  await signIn("github", { callbackUrl: "/dashboard" }).finally(
+                    () => setIsAuthSubmitting(false),
+                  );
+                }}
               >
                 Sign in with GitHub
               </Button>
               <Button
                 variant="outline"
-                type="button"
                 className="w-full"
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                disabled={isAuthSubmitting}
+                onClick={async () => {
+                  setIsAuthSubmitting(true);
+                  await signIn("google", { callbackUrl: "/dashboard" }).finally(
+                    () => setIsAuthSubmitting(false),
+                  );
+                }}
               >
                 Sign in with Google
               </Button>
@@ -180,17 +203,7 @@ export default function Login() {
           <Form {...form}>
             <form
               className="space-y-6 text-right"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (step === 2 && code.length === 6) {
-                  await signIn("credentials", {
-                    email,
-                    code,
-                    redirect: true,
-                    callbackUrl: "/dashboard",
-                  });
-                }
-              }}
+              onSubmit={form.handleSubmit(onSubmit)}
             >
               {step === 1 ? (
                 <FormField
@@ -249,7 +262,7 @@ export default function Login() {
                   <Button
                     className="w-24 hover:cursor-pointer"
                     type="submit"
-                    // disabled={!form.formState.isValid}
+                    disabled={form.formState.isSubmitting}
                   >
                     Login
                   </Button>
@@ -258,7 +271,7 @@ export default function Login() {
                     className="w-24 hover:cursor-pointer"
                     type="button"
                     onClick={handleNextStep}
-                    // disabled={!form.formState.isValid}
+                    disabled={verify.isPending || isAuthSubmitting}
                   >
                     Continue
                   </Button>
@@ -268,6 +281,7 @@ export default function Login() {
                     <Button
                       variant={"ghost"}
                       type="button"
+                      disabled={form.formState.isSubmitting}
                       // onClick={() => {}}
                     >
                       Resend the code
@@ -279,6 +293,7 @@ export default function Login() {
                         setStep(1);
                         form.reset();
                       }}
+                      disabled={form.formState.isSubmitting}
                     >
                       Choose another method
                     </Button>

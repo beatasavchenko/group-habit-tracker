@@ -171,27 +171,32 @@ export function CreateTabs({
     form.reset();
   }
 
-  const [inputValue, setInputValue] = React.useState("");
+  const [tagInputValue, setTagInputValue] = React.useState("");
+  const [friendInputValue, setFriendInputValue] = React.useState("");
 
-  const friends = api.user.getUsersByUsername.useMutation();
+  const [debouncedValue, setDebouncedValue] = React.useState(friendInputValue);
 
   useEffect(() => {
-    friends.mutate(
-      { username: inputValue },
-      {
-        onSuccess: (data) => {
-          if (data) {
-            const filteredData = data.filter(
-              (friend: DB_UserType) =>
-                !selectedFriends?.includes(friend.id) &&
-                !friendEmails?.includes(friend.email),
-            );
-            friends.data = filteredData;
-          }
-        },
-      },
-    );
-  }, [inputValue]);
+    const timeout = setTimeout(() => setDebouncedValue(friendInputValue), 300);
+    return () => clearTimeout(timeout);
+  }, [friendInputValue]);
+
+  const friendsQuery = api.user.getUsersByUsername.useQuery(
+    { username: debouncedValue },
+    { enabled: debouncedValue.length > 1 },
+  );
+
+  // const filteredFriends = (friends.data ?? []).filter(
+  //   (friend: DB_UserType) =>
+  //     !selectedFriends?.includes(friend.id) &&
+  //     !friendEmails?.includes(friend.email),
+  // );
+
+  const createGroup = api.group.createGroup.useMutation();
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log("Form submitted with values:", values);
+  };
 
   return (
     <Tabs defaultValue="community" onValueChange={onTabChange} className="">
@@ -240,8 +245,8 @@ export function CreateTabs({
                       items={tags}
                       selectedValues={selectedTags}
                       setSelectedValues={setSelectedTags}
-                      inputValue={inputValue}
-                      setInputValue={setInputValue}
+                      inputValue={tagInputValue}
+                      setInputValue={setTagInputValue}
                       getItemValue={(tag: Tag) => tag.value}
                       getItemLabel={(tag: Tag) => tag.label}
                       placeholder="Search tags..."
@@ -275,7 +280,10 @@ export function CreateTabs({
           </CardHeader>
           <CardContent className="space-y-2">
             <Form {...form}>
-              <form className="space-y-3">
+              <form
+                className="space-y-3"
+                onSubmit={form.handleSubmit(onSubmit)}
+              >
                 <FormField
                   control={form.control}
                   name="group.name"
@@ -304,7 +312,7 @@ export function CreateTabs({
                       <FormControl>
                         <ComboboxComponent
                           label="Guests"
-                          items={friends.data ?? []}
+                          items={friendsQuery.data ?? []}
                           selectedValues={selectedFriends?.map(String)}
                           setSelectedValues={(ids) => {
                             if (Array.isArray(ids)) {
@@ -312,13 +320,13 @@ export function CreateTabs({
                             }
                           }}
                           getItemValue={(friend: DB_UserType) =>
-                            friend.id.toString()
+                            friend.username
                           }
                           getItemLabel={(friend: DB_UserType) =>
                             friend.username
                           }
-                          inputValue={inputValue}
-                          setInputValue={setInputValue}
+                          inputValue={friendInputValue}
+                          setInputValue={setFriendInputValue}
                           placeholder="Search or invite..."
                           allowCustomInput
                           onCustomValueAdd={(email) =>

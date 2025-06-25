@@ -19,6 +19,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      isVerified: boolean;
     };
   }
 }
@@ -44,6 +45,7 @@ export const authOptions: NextAuthOptions = {
 
         if (!credentials?.email || !credentials?.code) return null;
         const user = await findUserByEmail(credentials.email);
+
         if (!user) return null;
 
         if (user.code !== credentials.code) {
@@ -87,6 +89,7 @@ export const authOptions: NextAuthOptions = {
       if (dbUser) {
         session.user.id = dbUser.id;
         session.user.username = dbUser.username;
+        session.user.isVerified = dbUser.isVerified;
       }
       return session;
     },

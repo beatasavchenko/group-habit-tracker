@@ -139,16 +139,16 @@ const allCommunities = [
 export function AppSidebar() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    // defaultValues: {
-    //   community: {
-    //     name: "",
-    //     tags: [],
-    //   },
-    //   group: {
-    //     name: "",
-    //     friends: [],
-    //   },
-    // },
+    defaultValues: {
+      community: {
+        name: "",
+        tags: [],
+      },
+      group: {
+        name: "",
+        friends: [],
+      },
+    },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -277,6 +277,7 @@ export function AppSidebar() {
                         id: session.user.id,
                         isVerified: false,
                       });
+                      if (!updateUser.isSuccess) return;
                       await signOut({
                         redirect: true,
                         callbackUrl: "/login",
