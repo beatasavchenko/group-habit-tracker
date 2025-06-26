@@ -56,6 +56,7 @@
     "react-email": "4.0.15",
     "react-hook-form": "^7.56.4",
     "server-only": "^0.0.1",
+    "sonner": "^2.0.5",
     "superjson": "^2.2.1",
     "tailwind-merge": "^3.3.0",
     "unique-names-generator": "^4.7.1",

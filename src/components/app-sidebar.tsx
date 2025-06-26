@@ -9,6 +9,7 @@ import {
   Inbox,
   LogOut,
   PlusCircleIcon,
+  Router,
   Search,
   Settings,
 } from "lucide-react";
@@ -58,25 +59,37 @@ import { Separator } from "@radix-ui/react-separator";
 import { signOut, useSession } from "next-auth/react";
 import { redirect } from "next/dist/server/api-utils";
 import { api } from "~/trpc/react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-const communitySchema = z.object({
+export const communitySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
-  habitName: z.string().min(2, "Habit name must be at least 2 characters."),
+  habitName: z
+    .string()
+    .min(2, "Habit name must be at least 2 characters.")
+    .optional(),
   description: z
     .string()
-    .min(10, "Description must be at least 10 characters."),
-  dailyGoal: z.number(), //TODO: think about it
+    .min(10, "Description must be at least 10 characters.")
+    .optional(),
+  dailyGoal: z.number().optional(), //TODO: think about it
   tags: z.array(z.string()).min(1, "Select at least one tag."),
 });
 
-const groupSchema = z.object({
+export const groupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   friends: z.array(z.string()).optional(),
 });
 
-export const formSchema = z.union([
-  z.object({ community: communitySchema }),
-  z.object({ group: groupSchema }),
+export const formSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("group"),
+    group: groupSchema,
+  }),
+  z.object({
+    type: z.literal("community"),
+    community: communitySchema,
+  }),
 ]);
 
 const groups = [
@@ -140,10 +153,7 @@ export function AppSidebar() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      community: {
-        name: "",
-        tags: [],
-      },
+      type: "group",
       group: {
         name: "",
         friends: [],
@@ -151,15 +161,45 @@ export function AppSidebar() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-  }
+  const [tab, setTab] = React.useState<"community" | "group">("group");
 
   const [open, setOpen] = React.useState(false);
 
   const updateUser = api.user.updateUser.useMutation();
 
   const { data: session } = useSession();
+
+  const [selectedTags, setSelectedTags] = React.useState<
+    string[] | undefined
+  >();
+
+  const [selectedFriends, setSelectedFriends] = React.useState<
+    number[] | undefined
+  >();
+
+  const router = useRouter();
+
+  const createGroup = api.group.createGroup.useMutation({
+    onMutate: () => {
+      toast.loading("Creating group...");
+    },
+    onSuccess: (data) => {
+      toast.success("Group created successfully!");
+      router.push(`/app/groups/${data?.id}`);
+    },
+    onError: (error) => {
+      toast.error("Failed to create group: " + error.message);
+      console.error("Error creating group:", error);
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log("Form submitted with values:", values);
+
+    if (values.type === "group") createGroup.mutate(values.group);
+  };
+
+  console.log(form.formState.errors);
 
   return (
     <Sidebar>
@@ -188,11 +228,20 @@ export function AppSidebar() {
                       You can either create new or join existing communities.
                     </DialogDescription>
                   </DialogHeader>
-                  <CreateTabs form={form} />
+                  <CreateTabs
+                    form={form}
+                    tab={tab}
+                    setTab={setTab}
+                    selectedTags={selectedTags}
+                    setSelectedTags={setSelectedTags}
+                    selectedFriends={selectedFriends}
+                    setSelectedFriends={setSelectedFriends}
+                  />
                   <DialogFooter>
                     <Button
-                      type="submit"
-                      onClick={() => onSubmit(form.getValues())}
+                      onClick={() => {
+                        form.handleSubmit(onSubmit)();
+                      }}
                     >
                       Save changes
                     </Button>
@@ -222,6 +271,22 @@ export function AppSidebar() {
                     ))}
                 </PopoverContent>
               </Popover>
+              <SidebarGroupLabel>Groups</SidebarGroupLabel>
+              {groups.map((group) => (
+                <SidebarMenuItem key={group.id}>
+                  <SidebarMenuButton asChild>
+                    <a href={group.url}>
+                      <Avatar className="h-8 w-8 rounded-lg grayscale">
+                        <AvatarImage src={group.image} alt={group.name} />
+                        <AvatarFallback className="rounded-lg">
+                          {group.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{group.name}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
               <SidebarGroupLabel>Communities</SidebarGroupLabel>
               {communities.map((community) => (
                 <SidebarMenuItem key={community.id}>
@@ -237,22 +302,6 @@ export function AppSidebar() {
                         </AvatarFallback>
                       </Avatar>
                       <span>{community.name}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              <SidebarGroupLabel>Groups</SidebarGroupLabel>
-              {groups.map((group) => (
-                <SidebarMenuItem key={group.id}>
-                  <SidebarMenuButton asChild>
-                    <a href={group.url}>
-                      <Avatar className="h-8 w-8 rounded-lg grayscale">
-                        <AvatarImage src={group.image} alt={group.name} />
-                        <AvatarFallback className="rounded-lg">
-                          {group.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{group.name}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -280,7 +329,7 @@ export function AppSidebar() {
                       if (!updateUser.isSuccess) return;
                       await signOut({
                         redirect: true,
-                        callbackUrl: "/login",
+                        callbackUrl: "/app/login",
                       });
                     }}
                   >

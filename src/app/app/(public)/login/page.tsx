@@ -156,7 +156,7 @@ export default function Login() {
         email: data.step1.email,
         code: data.step2.code,
         redirect: true,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/app/dashboard",
       });
     }
   };
@@ -178,9 +178,9 @@ export default function Login() {
                 disabled={isAuthSubmitting}
                 onClick={async () => {
                   setIsAuthSubmitting(true);
-                  await signIn("github", { callbackUrl: "/dashboard" }).finally(
-                    () => setIsAuthSubmitting(false),
-                  );
+                  await signIn("github", {
+                    callbackUrl: "/app/dashboard",
+                  }).finally(() => setIsAuthSubmitting(false));
                 }}
               >
                 Sign in with GitHub
@@ -191,9 +191,9 @@ export default function Login() {
                 disabled={isAuthSubmitting}
                 onClick={async () => {
                   setIsAuthSubmitting(true);
-                  await signIn("google", { callbackUrl: "/dashboard" }).finally(
-                    () => setIsAuthSubmitting(false),
-                  );
+                  await signIn("google", {
+                    callbackUrl: "/app/dashboard",
+                  }).finally(() => setIsAuthSubmitting(false));
                 }}
               >
                 Sign in with Google

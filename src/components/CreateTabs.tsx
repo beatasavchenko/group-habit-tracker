@@ -60,7 +60,7 @@ import {
   FormLabel,
   FormMessage,
 } from "./ui/form";
-import { formSchema } from "./app-sidebar";
+import { communitySchema, formSchema, groupSchema } from "./app-sidebar";
 import { SelectedFriends } from "./SelectedFriends";
 import ComboboxComponent from "./ComboboxComponent";
 import { api } from "~/trpc/react";
@@ -146,30 +146,28 @@ const tags: Tag[] = [
 
 export function CreateTabs({
   form,
+  tab,
+  setTab,
+  selectedTags,
+  setSelectedTags,
+  selectedFriends,
+  setSelectedFriends,
 }: {
   form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>;
+  tab: "community" | "group";
+  setTab: React.Dispatch<React.SetStateAction<"community" | "group">>;
+  selectedTags?: string[];
+  setSelectedTags: React.Dispatch<React.SetStateAction<string[] | undefined>>;
+  selectedFriends?: number[];
+  setSelectedFriends: React.Dispatch<
+    React.SetStateAction<number[] | undefined>
+  >;
 }) {
   const [open, setOpen] = React.useState(false);
   const [openGuests, setOpenGuests] = React.useState(false);
-  const [selectedTags, setSelectedTags] = React.useState<
-    string[] | undefined
-  >();
-
-  const [selectedFriends, setSelectedFriends] = React.useState<
-    number[] | undefined
-  >();
   const [friendEmails, setFriendEmails] = React.useState<
     string[] | undefined
   >();
-
-  function onTabChange() {
-    setSelectedTags(undefined);
-    setSelectedFriends(undefined);
-    setOpen(false);
-    setOpenGuests(false);
-    setFriendEmails(undefined);
-    form.reset();
-  }
 
   const [tagInputValue, setTagInputValue] = React.useState("");
   const [friendInputValue, setFriendInputValue] = React.useState("");
@@ -192,18 +190,124 @@ export function CreateTabs({
   //     !friendEmails?.includes(friend.email),
   // );
 
-  const createGroup = api.group.createGroup.useMutation();
+  useEffect(() => {
+    if (tab === "community") {
+      form.resetField("group", { defaultValue: { name: "", friends: [] } });
+    } else {
+      form.resetField("community", {
+        defaultValue: {
+          name: "",
+          habitName: "",
+          description: "",
+          dailyGoal: 0,
+          tags: [],
+        },
+      });
+    }
+  }, [tab]);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log("Form submitted with values:", values);
-  };
+  function onTabChange(tab: "community" | "group") {
+    setTab(tab);
+    form.setValue("type", tab);
+    setSelectedTags(undefined);
+    setSelectedFriends(undefined);
+    setOpen(false);
+    setOpenGuests(false);
+    setFriendEmails(undefined);
+    form.reset();
+  }
+
+  useEffect(() => {
+    form.setValue("community.tags", selectedTags ?? []);
+  }, [selectedTags]);
+
+  useEffect(() => {
+    form.setValue("group.friends", selectedFriends?.map(String) ?? []);
+  }, [selectedFriends]);
 
   return (
-    <Tabs defaultValue="community" onValueChange={onTabChange} className="">
+    <Tabs
+      value={tab}
+      defaultValue="group"
+      onValueChange={(tab: string) => onTabChange(tab as "community" | "group")}
+      className=""
+    >
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="community">Community</TabsTrigger>
         <TabsTrigger value="group">Group</TabsTrigger>
+        <TabsTrigger value="community">Community</TabsTrigger>
       </TabsList>
+      <TabsContent value="group">
+        <Card>
+          <CardHeader>
+            <CardTitle>Group</CardTitle>
+            <CardDescription>
+              Create your own group for multiple habits. Groups are always
+              private, you can invite people to join.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Form {...form}>
+              <form className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="group.name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="name"
+                          placeholder="My friend group"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        This is your public display name.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="group.friends"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Friends</FormLabel>
+                      <FormControl>
+                        <ComboboxComponent
+                          items={friendsQuery.data ?? []}
+                          selectedValues={selectedFriends?.map(String)}
+                          setSelectedValues={(ids) => {
+                            if (Array.isArray(ids)) {
+                              setSelectedFriends(ids.map(Number));
+                            }
+                          }}
+                          getItemValue={(friend: DB_UserType) =>
+                            friend.username
+                          }
+                          getItemLabel={(friend: DB_UserType) =>
+                            friend.username
+                          }
+                          inputValue={friendInputValue}
+                          setInputValue={setFriendInputValue}
+                          placeholder="Search or invite..."
+                          allowCustomInput
+                          onCustomValueAdd={(email) =>
+                            setFriendEmails([...(friendEmails ?? []), email])
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <SelectedFriends />
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </TabsContent>
       <TabsContent value="community">
         <Card>
           <CardHeader>
@@ -240,17 +344,22 @@ export function CreateTabs({
                   control={form.control}
                   name="community.tags"
                   render={({ field }) => (
-                    <ComboboxComponent
-                      label="Tags"
-                      items={tags}
-                      selectedValues={selectedTags}
-                      setSelectedValues={setSelectedTags}
-                      inputValue={tagInputValue}
-                      setInputValue={setTagInputValue}
-                      getItemValue={(tag: Tag) => tag.value}
-                      getItemLabel={(tag: Tag) => tag.label}
-                      placeholder="Search tags..."
-                    />
+                    <FormItem>
+                      <FormLabel>Tags</FormLabel>
+                      <FormControl>
+                        <ComboboxComponent
+                          items={tags}
+                          selectedValues={selectedTags}
+                          setSelectedValues={setSelectedTags}
+                          inputValue={tagInputValue}
+                          setInputValue={setTagInputValue}
+                          getItemValue={(tag: Tag) => tag.value}
+                          getItemLabel={(tag: Tag) => tag.label}
+                          placeholder="Search tags..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
                 />
 
@@ -264,81 +373,6 @@ export function CreateTabs({
                       </Badge>
                     ))}
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      <TabsContent value="group">
-        <Card>
-          <CardHeader>
-            <CardTitle>Group</CardTitle>
-            <CardDescription>
-              Create your own group for multiple habits. Groups are always
-              private, you can invite people to join.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Form {...form}>
-              <form
-                className="space-y-3"
-                onSubmit={form.handleSubmit(onSubmit)}
-              >
-                <FormField
-                  control={form.control}
-                  name="group.name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="name"
-                          placeholder="My friend group"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        This is your public display name.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="group.friends"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <ComboboxComponent
-                          label="Guests"
-                          items={friendsQuery.data ?? []}
-                          selectedValues={selectedFriends?.map(String)}
-                          setSelectedValues={(ids) => {
-                            if (Array.isArray(ids)) {
-                              setSelectedFriends(ids.map(Number));
-                            }
-                          }}
-                          getItemValue={(friend: DB_UserType) =>
-                            friend.username
-                          }
-                          getItemLabel={(friend: DB_UserType) =>
-                            friend.username
-                          }
-                          inputValue={friendInputValue}
-                          setInputValue={setFriendInputValue}
-                          placeholder="Search or invite..."
-                          allowCustomInput
-                          onCustomValueAdd={(email) =>
-                            setFriendEmails([...(friendEmails ?? []), email])
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <SelectedFriends />
               </form>
             </Form>
           </CardContent>

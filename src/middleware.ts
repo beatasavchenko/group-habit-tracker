@@ -13,12 +13,12 @@ export async function middleware(request: NextRequest) {
   console.log("Token:", token);
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/app/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/communities/:path*"],
+  matcher: ["/app/dashboard/:path*", "/app/communities/:path*"],
 };

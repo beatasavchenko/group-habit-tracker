@@ -20,7 +20,6 @@ type ComboboxComponentProps<T> = {
   getItemLabel: (item: T) => string;
   inputValue: string;
   setInputValue: React.Dispatch<React.SetStateAction<string>>;
-  label?: string;
   description?: string;
   placeholder?: string;
   allowCustomInput?: boolean;
@@ -36,7 +35,6 @@ export default function ComboboxComponent<T>({
   getItemLabel,
   inputValue,
   setInputValue,
-  label = "Select items",
   description,
   placeholder = "Search...",
   allowCustomInput = false,
@@ -72,8 +70,6 @@ export default function ComboboxComponent<T>({
 
   return (
     <div className="space-y-1">
-      {label && <label className="text-sm font-medium">{label}</label>}
-
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button

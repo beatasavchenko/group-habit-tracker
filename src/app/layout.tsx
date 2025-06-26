@@ -9,6 +9,7 @@ import { HydrateClient } from "~/trpc/server";
 import { SessionProvider } from "next-auth/react";
 import PageLayout from "~/components/PageLayout";
 import LayoutWrapper from "./layoutWrapper";
+import { Toaster } from "~/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -36,6 +37,7 @@ export default function RootLayout({
           <TRPCReactProvider>
             <HydrateClient>
               <LayoutWrapper>{children}</LayoutWrapper>
+              <Toaster />
             </HydrateClient>
           </TRPCReactProvider>
         </ThemeProvider>

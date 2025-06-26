@@ -24,7 +24,7 @@ export default async function CommunityPage() {
   const community: Community = {
     id: 1,
     name: "Family",
-    url: "/groups/1",
+    url: "/app/groups/1",
     image: "img.jpg",
   };
 

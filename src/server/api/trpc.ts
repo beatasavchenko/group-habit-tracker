@@ -24,10 +24,14 @@ import { db } from "~/server/db";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
+export const createTRPCContext = async (opts: {
+  session: any;
+  headers: Headers;
+}) => {
   return {
     db,
-    ...opts,
+    session: opts.session,
+    headers: opts.headers,
   };
 };
 

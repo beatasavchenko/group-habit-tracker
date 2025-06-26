@@ -20,9 +20,10 @@ export async function findGroupById(id: number) {
   return user[0] ?? null;
 }
 
-export async function createGroup(
-  groupToCreate: z.infer<typeof DB_GroupType_Zod>,
-) {
+export async function createGroup(groupToCreate: {
+  name: string;
+  friends?: string[];
+}) {
   if (!groupToCreate.name) {
     return null;
   }
@@ -49,3 +50,7 @@ export async function createGroup(
   if (!group[0]) return null;
   return await findGroupById(group[0]?.id);
 }
+
+export async function getGroupsForUser(userId: number) {}
+
+export async function getGroupById(groupId: number) {}
