@@ -100,7 +100,7 @@ export const groupMembers = createTable(
     userId: bigint("user_id", { mode: "number", unsigned: true }),
     role: text("role")
       .default("member")
-      .$type<"member" | "admin" | "pending">(),
+      .$type<"owner" | "member" | "admin" | "pending">(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.groupId] })],
 );

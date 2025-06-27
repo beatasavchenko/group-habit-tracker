@@ -1,25 +1,35 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { DB_UserType_Zod, Partial_DB_UserType_Zod } from "~/lib/types";
+import { DB_UserType_Zod } from "~/lib/types";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
 import {
   findUserByEmail,
-  getUsersByUsername,
+  getUsersByUsernameOrEmail,
   updateUser,
 } from "~/server/services/userService";
 
 export const userRouter = createTRPCRouter({
-  updateUser: publicProcedure
-    .input(Partial_DB_UserType_Zod)
+  updateUser: protectedProcedure
+    .input(DB_UserType_Zod.partial())
     .mutation(async ({ ctx, input }) => {
-      const res = await updateUser(input.id, { ...input });
+      const res = await updateUser(ctx.userId, { ...input });
       return res ?? null;
     }),
-  getUsersByUsername: publicProcedure
-    .input(z.object({ username: z.string() }))
+  getUsersByUsernameOrEmail: protectedProcedure
+    .input(
+      z.object({
+        username: z.string().optional(),
+        email: z.string().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      if (!input) return [];
-      const res = await getUsersByUsername(input.username);
+      if (!input) return null;
+      const res = await getUsersByUsernameOrEmail(input.username, input.email);
       return res ?? null;
     }),
 });

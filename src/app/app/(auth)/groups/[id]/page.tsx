@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 import { LatestPost } from "~/app/_components/post";
 import { CreateTabs } from "~/components/CreateTabs";
@@ -17,21 +20,19 @@ import {
 import { ModeToggle } from "~/components/ui/mode-toggle";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
-import type { Community } from "~/lib/types";
-import { api, HydrateClient } from "~/trpc/server";
+import { api } from "~/trpc/react";
 
-export default async function CommunityPage() {
-  const community: Community = {
-    id: 1,
-    name: "Family",
-    url: "/app/groups/1",
-    image: "img.jpg",
-  };
+export default function GroupPage() {
+  const params = useParams<{ id: string }>();
+
+  const { data: group } = api.group.getGroupByUsername.useQuery({
+    groupUsername: params.id,
+  });
 
   return (
     <div className="flex h-screen w-full flex-col">
       <Header
-        name={community.name}
+        name={group?.groups?.name ?? "My Group"}
         button={
           <div className="ml-auto">
             <Dialog>
@@ -46,7 +47,6 @@ export default async function CommunityPage() {
                 </DialogHeader>
                 <DialogFooter>
                   <Button>Join</Button>
-                  <Button>Join anonymously</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

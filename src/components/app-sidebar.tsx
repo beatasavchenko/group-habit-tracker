@@ -92,21 +92,6 @@ export const formSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-const groups = [
-  {
-    id: 1,
-    name: "Family",
-    url: "/groups/1",
-    image: "img.jpg",
-  },
-  {
-    id: 2,
-    name: "Team",
-    url: "/groups/2",
-    image: "img.jpg",
-  },
-];
-
 const communities = [
   {
     id: 1,
@@ -174,7 +159,7 @@ export function AppSidebar() {
   >();
 
   const [selectedFriends, setSelectedFriends] = React.useState<
-    number[] | undefined
+    string[] | undefined
   >();
 
   const router = useRouter();
@@ -185,7 +170,7 @@ export function AppSidebar() {
     },
     onSuccess: (data) => {
       toast.success("Group created successfully!");
-      router.push(`/app/groups/${data?.id}`);
+      router.push(`/app/groups/${data?.groups.groupUsername}`);
     },
     onError: (error) => {
       toast.error("Failed to create group: " + error.message);
@@ -194,12 +179,10 @@ export function AppSidebar() {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log("Form submitted with values:", values);
-
     if (values.type === "group") createGroup.mutate(values.group);
   };
 
-  console.log(form.formState.errors);
+  const { data: groups } = api.group.getGroupsForUser.useQuery();
 
   return (
     <Sidebar>
@@ -272,12 +255,14 @@ export function AppSidebar() {
                 </PopoverContent>
               </Popover>
               <SidebarGroupLabel>Groups</SidebarGroupLabel>
-              {groups.map((group) => (
+              {groups?.map((group) => (
                 <SidebarMenuItem key={group.id}>
                   <SidebarMenuButton asChild>
-                    <a href={group.url}>
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_BASE_URL}/groups/${group.groupUsername}`}
+                    >
                       <Avatar className="h-8 w-8 rounded-lg grayscale">
-                        <AvatarImage src={group.image} alt={group.name} />
+                        <AvatarImage src={group.image ?? ""} alt={group.name} />
                         <AvatarFallback className="rounded-lg">
                           {group.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
@@ -319,14 +304,9 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild>
                   <Button
                     onClick={async () => {
-                      console.log("sesh", session);
-
-                      if (!session) return;
-                      updateUser.mutateAsync({
-                        id: session.user.id,
+                      await updateUser.mutateAsync({
                         isVerified: false,
                       });
-                      if (!updateUser.isSuccess) return;
                       await signOut({
                         redirect: true,
                         callbackUrl: "/app/login",

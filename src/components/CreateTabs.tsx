@@ -158,9 +158,9 @@ export function CreateTabs({
   setTab: React.Dispatch<React.SetStateAction<"community" | "group">>;
   selectedTags?: string[];
   setSelectedTags: React.Dispatch<React.SetStateAction<string[] | undefined>>;
-  selectedFriends?: number[];
+  selectedFriends?: string[];
   setSelectedFriends: React.Dispatch<
-    React.SetStateAction<number[] | undefined>
+    React.SetStateAction<string[] | undefined>
   >;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -179,7 +179,7 @@ export function CreateTabs({
     return () => clearTimeout(timeout);
   }, [friendInputValue]);
 
-  const friendsQuery = api.user.getUsersByUsername.useQuery(
+  const friendsQuery = api.user.getUsersByUsernameOrEmail.useQuery(
     { username: debouncedValue },
     { enabled: debouncedValue.length > 1 },
   );
@@ -280,7 +280,7 @@ export function CreateTabs({
                           selectedValues={selectedFriends?.map(String)}
                           setSelectedValues={(ids) => {
                             if (Array.isArray(ids)) {
-                              setSelectedFriends(ids.map(Number));
+                              setSelectedFriends(ids.map(String));
                             }
                           }}
                           getItemValue={(friend: DB_UserType) =>

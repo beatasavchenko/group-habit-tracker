@@ -7,9 +7,12 @@
  * need to use are documented accordingly near the end.
  */
 import { initTRPC } from "@trpc/server";
+import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
+import { getServerSession, unstable_getServerSession } from "next-auth";
+import { getSession } from "next-auth/react";
 import superjson from "superjson";
 import { ZodError } from "zod";
-
+import { authOptions } from "~/lib/authOptions";
 import { db } from "~/server/db";
 
 /**
@@ -24,16 +27,12 @@ import { db } from "~/server/db";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: {
-  session: any;
-  headers: Headers;
-}) => {
-  return {
-    db,
-    session: opts.session,
-    headers: opts.headers,
-  };
-};
+export async function createContext() {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ?? null;
+  return { session, userId, db };
+}
+export type TRPCContext = Awaited<ReturnType<typeof createContext>>;
 
 /**
  * 2. INITIALIZATION
@@ -42,7 +41,7 @@ export const createTRPCContext = async (opts: {
  * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
  * errors on the backend.
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.context<typeof createContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
@@ -108,3 +107,14 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new Error("UNAUTHORIZED");
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      userId: ctx.userId,
+    },
+  });
+});

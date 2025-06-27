@@ -35,10 +35,6 @@ export const DB_UserType_Zod = z.object({
   updatedAt: z.date().optional().nullable(),
 });
 
-export const Partial_DB_UserType_Zod = DB_UserType_Zod.partial().extend({
-  id: DB_UserType_Zod.shape.id,
-});
-
 export const DB_GroupType_Zod = z.object({
   id: z.number().int().nonnegative(),
   group_username: z.string().min(1),

@@ -8,19 +8,6 @@ import {
   updateUser,
 } from "~/server/services/userService";
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: number;
-      username?: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      isVerified: boolean;
-    };
-  }
-}
-
 export const authOptions: NextAuthOptions = {
   providers: [
     GitHubProvider({
@@ -57,6 +44,9 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  session: {
+    strategy: "jwt" as SessionStrategy,
+  },
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
@@ -68,25 +58,46 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
         });
       }
+
       if (!dbUser) return false;
 
       await updateUser(dbUser.id, { isVerified: true });
       return true;
     },
-    async session({ session }) {
-      const dbUser = await findUserByEmail(session.user.email ?? "");
-      if (dbUser) {
-        session.user.id = dbUser.id;
-        session.user.username = dbUser.username;
-        session.user.isVerified = dbUser.isVerified;
+    async jwt({ token, user }) {
+      let email = user?.email ?? token.email;
+      if (email) {
+        const dbUser = await findUserByEmail(email);
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.username = dbUser.username;
+          token.isVerified = dbUser.isVerified;
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.picture = dbUser.image;
+        }
+      }
+      token.id = token.id ?? null;
+      token.username = token.username ?? undefined;
+      token.isVerified = token.isVerified ?? false;
+      token.name = token.name ?? null;
+      token.email = token.email ?? null;
+      token.picture = token.picture ?? null;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id ?? null;
+        session.user.username = token.username ?? undefined;
+        session.user.isVerified = token.isVerified ?? false;
+        session.user.name = token.name ?? session.user.name ?? null;
+        session.user.email = token.email ?? session.user.email ?? null;
+        session.user.image = token.picture ?? session.user.image ?? null;
       }
       return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: "jwt" as SessionStrategy,
-  },
   pages: {
     signIn: "/app/login",
   },

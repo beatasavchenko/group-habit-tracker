@@ -52,20 +52,21 @@ export default function ComboboxComponent<T>({
   };
 
   const toggleSelection = (value: string) => {
-    if (selectedValues?.includes(value)) {
-      setSelectedValues(selectedValues.filter((v) => v !== value));
-    } else {
-      setSelectedValues([...(selectedValues ?? []), value]);
-    }
+    setSelectedValues((prev) =>
+      prev?.includes(value)
+        ? prev.filter((v) => v !== value)
+        : [...(prev ?? []), value],
+    );
   };
 
   const handleCustomInput = () => {
     const trimmed = inputValue.trim();
-    if (!isValidEmail(trimmed) || selectedValues?.includes(trimmed)) return;
-    if (onCustomValueAdd) {
-      onCustomValueAdd(trimmed);
-      setInputValue("");
+    if (!isValidEmail(trimmed)) return;
+
+    if (!selectedValues?.includes(trimmed)) {
+      setSelectedValues((prev) => [...(prev ?? []), trimmed]);
     }
+    setInputValue("");
   };
 
   return (
@@ -136,7 +137,10 @@ export default function ComboboxComponent<T>({
 
                 {allowCustomInput &&
                   isValidEmail(inputValue.trim()) &&
-                  !selectedValues?.includes(inputValue.trim()) && (
+                  !selectedValues?.includes(inputValue.trim()) &&
+                  !items.some(
+                    (item) => getItemValue(item) === inputValue.trim(),
+                  ) && (
                     <CommandItem
                       value="custom"
                       className="text-blue-600"

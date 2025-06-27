@@ -1,4 +1,4 @@
-import { eq, like, sql } from "drizzle-orm";
+import { eq, like, or, sql } from "drizzle-orm";
 import { users, type DB_UserType } from "~/server/db/schema";
 import { db } from "~/server/db";
 import {
@@ -13,6 +13,15 @@ export async function findUserByEmail(email: string) {
     .selectDistinct()
     .from(users)
     .where(eq(users.email, email));
+
+  return user[0] ?? null;
+}
+
+export async function findUserByUsername(username: string) {
+  const user = await db
+    .selectDistinct()
+    .from(users)
+    .where(eq(users.username, username));
 
   return user[0] ?? null;
 }
@@ -70,11 +79,19 @@ export async function updateUser(
   return await findUserById(user[0]?.insertId);
 }
 
-export async function getUsersByUsername(username: string) {
+export async function getUsersByUsernameOrEmail(
+  username?: string,
+  email?: string,
+) {
   const usersList = await db
     .selectDistinct()
     .from(users)
-    .where(like(sql`LOWER(${users.username})`, `%${username.toLowerCase()}%`));
+    .where(
+      or(
+        like(sql`LOWER(${users.username})`, `%${username?.toLowerCase()}%`),
+        like(sql`LOWER(${users.email})`, `%${email?.toLowerCase()}%`),
+      ),
+    );
 
   return usersList.length > 0 ? usersList : null;
 }
