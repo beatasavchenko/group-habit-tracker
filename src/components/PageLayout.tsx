@@ -12,9 +12,7 @@ export default function PageLayout({
       <AppSidebar />
       <main className="mx-0 flex w-full flex-col px-0">
         <ScrollArea className="h-screen">
-          <div className="flex w-full flex-col">
-            {children}
-          </div>
+          <div className="flex w-full flex-col">{children}</div>
         </ScrollArea>
       </main>
     </SidebarProvider>

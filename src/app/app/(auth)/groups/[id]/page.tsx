@@ -32,6 +32,7 @@ export default function GroupPage() {
   return (
     <div className="flex h-screen w-full flex-col">
       <Header
+        info={group}
         name={group?.groups?.name ?? "My Group"}
         button={
           <div className="ml-auto">
