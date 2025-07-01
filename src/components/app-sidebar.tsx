@@ -169,12 +169,13 @@ export function AppSidebar() {
       toast.loading("Creating group...");
     },
     onSuccess: (data) => {
+      toast.dismiss();
       toast.success("Group created successfully!");
       router.push(`/app/groups/${data?.groups.groupUsername}`);
     },
     onError: (error) => {
-      toast.error("Failed to create group: " + error.message);
-      console.error("Error creating group:", error);
+      toast.dismiss();
+      toast.error("Error creating group.");
     },
   });
 
@@ -259,11 +260,11 @@ export function AppSidebar() {
                 <SidebarMenuItem key={group.id}>
                   <SidebarMenuButton asChild>
                     <a
-                      href={`${process.env.NEXT_PUBLIC_BASE_URL}/groups/${group.groupUsername}`}
+                      href={`${process.env.NEXT_PUBLIC_BASE_URL}/app/groups/${group.groupUsername}`}
                     >
-                      <Avatar className="h-8 w-8 rounded-lg grayscale">
+                      <Avatar className="h-8 w-8 rounded-full">
                         <AvatarImage src={group.image ?? ""} alt={group.name} />
-                        <AvatarFallback className="rounded-lg">
+                        <AvatarFallback className="rounded-full">
                           {group.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -277,12 +278,12 @@ export function AppSidebar() {
                 <SidebarMenuItem key={community.id}>
                   <SidebarMenuButton asChild>
                     <a href={community.url}>
-                      <Avatar className="h-8 w-8 rounded-lg grayscale">
+                      <Avatar className="h-8 w-8 rounded-full">
                         <AvatarImage
                           src={community.image}
                           alt={community.name}
                         />
-                        <AvatarFallback className="rounded-lg">
+                        <AvatarFallback className="rounded-full">
                           {community.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>

@@ -5,7 +5,6 @@ import dayjs from "dayjs";
 
 export async function verify(email: string) {
   let user = await findUserByEmail(email);
-  console.log("User found:", user);
 
   user ??= await createUser({ email });
   if (!user) return;

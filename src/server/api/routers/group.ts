@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { DB_GroupType_Zod } from "~/lib/types";
+import { DB_GroupType_Zod, Partial_DB_GroupType_Zod } from "~/lib/types";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -8,9 +8,10 @@ import {
 } from "~/server/api/trpc";
 import {
   createGroup,
-  getGroupById,
-  getGroupByUsername,
+  findGroupById,
+  findGroupByUsername,
   getGroupsForUser,
+  updateGroup,
 } from "~/server/services/groupService";
 
 export const groupRouter = createTRPCRouter({
@@ -35,14 +36,20 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ groupId: z.number() }))
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await getGroupById(input.groupId);
+      const res = await findGroupById(input.groupId);
       return res ?? null;
     }),
   getGroupByUsername: protectedProcedure
     .input(z.object({ groupUsername: z.string() }))
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await getGroupByUsername(input.groupUsername);
+      const res = await findGroupByUsername(input.groupUsername);
+      return res ?? null;
+    }),
+  updateGroup: protectedProcedure
+    .input(Partial_DB_GroupType_Zod)
+    .mutation(async ({ ctx, input }) => {
+      const res = await updateGroup(input.id, { ...input });
       return res ?? null;
     }),
 });

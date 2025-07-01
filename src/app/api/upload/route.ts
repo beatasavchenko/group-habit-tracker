@@ -1,25 +1,33 @@
-import { mkdir, writeFile } from "fs/promises";
+import { writeFile, unlink } from "fs/promises";
 import path from "path";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export const POST = async (req: NextRequest) => {
+export async function POST(req: Request) {
   const formData = await req.formData();
   const file = formData.get("file") as File;
+  const previousImage = formData.get("previousImage") as string | null;
 
-  if (!file)
-    return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+  if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
   const uploadDir = path.join(process.cwd(), "public/uploads");
 
-  await mkdir(uploadDir, { recursive: true });
+  const filename = `${file.name}`;
+  const uploadPath = path.join(uploadDir, filename);
 
-  const uploadPath = path.join(uploadDir, file.name);
+  if (previousImage) {
+    const oldPath = path.join(uploadDir, path.basename(previousImage));
+    
+    try {
+      await unlink(oldPath);
+    } catch (err) {
+      console.warn("Failed to delete old image:", err);
+    }
+  }
+
   await writeFile(uploadPath, buffer);
 
-  const url = `/uploads/${file.name}`;
-
-  return NextResponse.json({ success: true, url });
-};
+  return NextResponse.json({ url: `/uploads/${filename}` });
+}

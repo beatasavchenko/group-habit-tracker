@@ -6,7 +6,7 @@ import {
   findUserByUsername,
   updateUser,
 } from "./userService";
-import { DB_GroupType_Zod } from "~/lib/types";
+import { DB_GroupType_Zod, Partial_DB_GroupType_Zod } from "~/lib/types";
 import dayjs from "dayjs";
 import {
   adjectives,
@@ -19,7 +19,7 @@ import { groupMembers, groups, users } from "../db/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 
-export async function getGroupById(id: number) {
+export async function findGroupById(id: number) {
   const group = await db
     .selectDistinct()
     .from(groups)
@@ -29,7 +29,7 @@ export async function getGroupById(id: number) {
   return group[0] ?? null;
 }
 
-export async function getGroupByUsername(username: string) {
+export async function findGroupByUsername(username: string) {
   const group = await db
     .selectDistinct()
     .from(groups)
@@ -82,7 +82,7 @@ export async function createGroup(groupToCreate: {
   });
 
   if (!group[0]) return null;
-  return await getGroupById(group[0]?.id);
+  return await findGroupById(group[0]?.id);
 }
 
 export async function getGroupsForUser(userId: number) {
@@ -110,4 +110,22 @@ export async function getGroupsForUser(userId: number) {
         ]
       : [],
   }));
+}
+
+export async function updateGroup(
+  id: number,
+  data: Partial<{
+    name: string;
+    groupUsername: string;
+    image: string | null;
+  }>,
+) {
+  const group = await db
+    .update(groups)
+    .set(data)
+    .where(eq(groups.id, id))
+    .$dynamic();
+
+  if (!group[0]) return null;
+  return await findGroupById(group[0]?.insertId);
 }
