@@ -1,0 +1,1 @@
+ALTER TABLE `group-habit-tracker_groupMembers` RENAME TO `group-habit-tracker_group_members`;

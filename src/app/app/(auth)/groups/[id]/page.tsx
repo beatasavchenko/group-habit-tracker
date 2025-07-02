@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import { LatestPost } from "~/app/_components/post";
+import { useGroupRedirect } from "~/app/hooks/useGroupRedirect";
 import { CreateTabs } from "~/components/CreateTabs";
 import { Header } from "~/components/Header";
 import PageLayout from "~/components/PageLayout";
@@ -24,16 +26,15 @@ import { api } from "~/trpc/react";
 
 export default function GroupPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
 
-  const { data: group } = api.group.getGroupByUsername.useQuery({
-    groupUsername: params.id,
-  });
-
+  const { group: groupData } = useGroupRedirect(params.id);
+  
   return (
     <div className="flex h-screen w-full flex-col">
       <Header
-        info={group}
-        name={group?.groups?.name ?? "My Group"}
+        info={groupData}
+        name={groupData?.group?.name ?? "My Group"}
         button={
           <div className="ml-auto">
             <Dialog>

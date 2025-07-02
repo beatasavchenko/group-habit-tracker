@@ -31,13 +31,13 @@ export function Header(props: HeaderProps) {
 
   return (
     <>
-      <div className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+      <div className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-gray-200 px-6 py-4">
         <SidebarTrigger />
         <Button
           variant={"ghost"}
           onClick={() => {
             router.push(
-              "/app/groups/" + info?.groups.groupUsername + "/settings",
+              "/app/groups/" + info?.group.groupUsername + "/settings",
             );
           }}
           className="absolute left-1/2 -z-0 w-full -translate-x-1/2 transform px-8 py-8 text-xl font-semibold"

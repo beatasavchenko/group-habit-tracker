@@ -7,6 +7,7 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import {
+  addGroupMembers,
   createGroup,
   findGroupById,
   findGroupByUsername,
@@ -50,6 +51,35 @@ export const groupRouter = createTRPCRouter({
     .input(Partial_DB_GroupType_Zod)
     .mutation(async ({ ctx, input }) => {
       const res = await updateGroup(input.id, { ...input });
+      return res ?? null;
+    }),
+  addGroupMembers: protectedProcedure
+    .input(
+      z.object({
+        groupId: z.number(),
+        groupUsername: z.string(),
+        members: z.array(
+          z.object({
+            usernameOrEmail: z.string(),
+            role: z.enum(["admin", "member"]),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user.username) return null;
+      const res = await addGroupMembers(
+        ctx.userId,
+        input.groupId,
+        input.groupUsername,
+        [
+          ...(input.members ?? []),
+          {
+            usernameOrEmail: ctx.session?.user.username,
+            role: "member" as const,
+          },
+        ],
+      );
       return res ?? null;
     }),
 });

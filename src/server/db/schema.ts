@@ -94,7 +94,7 @@ export const groupsRelations = relations(groups, ({ many }) => ({
 }));
 
 export const groupMembers = createTable(
-  "groupMembers",
+  "group_members",
   {
     groupId: bigint("group_id", { mode: "number", unsigned: true }),
     userId: bigint("user_id", { mode: "number", unsigned: true }),
@@ -115,6 +115,7 @@ export const groupMemberRelations = relations(groupMembers, ({ one }) => ({
     references: [groups.id],
   }),
 }));
+export type DB_GroupMemberType = typeof groupMembers.$inferSelect;
 
 export const communities = createTable("communities", {
   id: bigint("id", { mode: "number", unsigned: true })

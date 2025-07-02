@@ -1,4 +1,4 @@
-import { eq, like, or, sql } from "drizzle-orm";
+import { and, eq, like, ne, or, sql } from "drizzle-orm";
 import { users, type DB_UserType } from "~/server/db/schema";
 import { db } from "~/server/db";
 import {
@@ -80,16 +80,20 @@ export async function updateUser(
 }
 
 export async function getUsersByUsernameOrEmail(
+  userId: number,
   username?: string,
   email?: string,
 ) {
   const usersList = await db
-    .selectDistinct()
+    .select()
     .from(users)
     .where(
-      or(
-        like(sql`LOWER(${users.username})`, `%${username?.toLowerCase()}%`),
-        like(sql`LOWER(${users.email})`, `%${email?.toLowerCase()}%`),
+      and(
+        or(
+          like(sql`LOWER(${users.username})`, `%${username?.toLowerCase()}%`),
+          like(sql`LOWER(${users.email})`, `%${email?.toLowerCase()}%`),
+        ),
+        ne(users.id, userId),
       ),
     );
 

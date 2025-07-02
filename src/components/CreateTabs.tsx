@@ -293,9 +293,10 @@ export function CreateTabs({
                           setInputValue={setFriendInputValue}
                           placeholder="Search or invite..."
                           allowCustomInput
-                          onCustomValueAdd={(email) =>
-                            setFriendEmails([...(friendEmails ?? []), email])
-                          }
+                          onCustomValueAdd={(email) => {
+                            setFriendEmails([...(friendEmails ?? []), email]);
+                            return email;
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -347,7 +348,7 @@ export function CreateTabs({
                     <FormItem>
                       <FormLabel>Tags</FormLabel>
                       <FormControl>
-                        <ComboboxComponent
+                        {/* <ComboboxComponent<Tag, string>
                           items={tags}
                           selectedValues={selectedTags}
                           setSelectedValues={setSelectedTags}
@@ -356,7 +357,7 @@ export function CreateTabs({
                           getItemValue={(tag: Tag) => tag.value}
                           getItemLabel={(tag: Tag) => tag.label}
                           placeholder="Search tags..."
-                        />
+                        /> */}
                       </FormControl>
                       <FormMessage />
                     </FormItem>

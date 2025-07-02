@@ -43,6 +43,13 @@
       "when": 1750859180715,
       "tag": "0005_flowery_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "1",
+      "when": 1751381451354,
+      "tag": "0006_reflective_magneto",
+      "breakpoints": true
     }
   ]
 }

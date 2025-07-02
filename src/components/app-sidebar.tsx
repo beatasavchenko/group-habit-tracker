@@ -52,7 +52,7 @@ import {
   CommandItem,
 } from "cmdk";
 import { cn } from "~/lib/utils";
-import React from "react";
+import React, { useState } from "react";
 import { ModeToggle } from "./ui/mode-toggle";
 import Link from "next/link";
 import { Separator } from "@radix-ui/react-separator";
@@ -164,6 +164,8 @@ export function AppSidebar() {
 
   const router = useRouter();
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const createGroup = api.group.createGroup.useMutation({
     onMutate: () => {
       toast.loading("Creating group...");
@@ -171,6 +173,7 @@ export function AppSidebar() {
     onSuccess: (data) => {
       toast.dismiss();
       toast.success("Group created successfully!");
+      setDialogOpen(false);
       router.push(`/app/groups/${data?.groups.groupUsername}`);
     },
     onError: (error) => {
@@ -195,7 +198,10 @@ export function AppSidebar() {
               <NavUser
                 user={{ name: "Kitty", email: "kitty@example.com", avatar: "" }}
               />
-              <Dialog>
+              <Dialog
+                open={dialogOpen}
+                onOpenChange={() => setDialogOpen(!dialogOpen)}
+              >
                 <DialogTrigger asChild>
                   <SidebarMenuButton
                     tooltip="Quick Create"
@@ -226,6 +232,7 @@ export function AppSidebar() {
                       onClick={() => {
                         form.handleSubmit(onSubmit)();
                       }}
+                      disabled={createGroup.isPending}
                     >
                       Save changes
                     </Button>
@@ -239,7 +246,7 @@ export function AppSidebar() {
                     <Input />
                   </Label>
                 </PopoverTrigger>
-                <PopoverContent className="flex w-sm flex-col gap-4 border-0 p-0 py-4">
+                <PopoverContent className="flex w-sm flex-col gap-4 border-0 p-0 py-4 popover-content-width-full">
                   {allCommunities
                     .filter((community) =>
                       community.name
@@ -255,43 +262,54 @@ export function AppSidebar() {
                     ))}
                 </PopoverContent>
               </Popover>
-              <SidebarGroupLabel>Groups</SidebarGroupLabel>
-              {groups?.map((group) => (
-                <SidebarMenuItem key={group.id}>
-                  <SidebarMenuButton asChild>
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_BASE_URL}/app/groups/${group.groupUsername}`}
-                    >
-                      <Avatar className="h-8 w-8 rounded-full">
-                        <AvatarImage src={group.image ?? ""} alt={group.name} />
-                        <AvatarFallback className="rounded-full">
-                          {group.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{group.name}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              <SidebarGroupLabel>Communities</SidebarGroupLabel>
-              {communities.map((community) => (
-                <SidebarMenuItem key={community.id}>
-                  <SidebarMenuButton asChild>
-                    <a href={community.url}>
-                      <Avatar className="h-8 w-8 rounded-full">
-                        <AvatarImage
-                          src={community.image}
-                          alt={community.name}
-                        />
-                        <AvatarFallback className="rounded-full">
-                          {community.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{community.name}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {groups && groups.length > 0 && (
+                <>
+                  <SidebarGroupLabel>Groups</SidebarGroupLabel>
+                  {groups?.map((group) => (
+                    <SidebarMenuItem key={group.id}>
+                      <SidebarMenuButton asChild>
+                        <a
+                          href={`${process.env.NEXT_PUBLIC_BASE_URL}/app/groups/${group.groupUsername}`}
+                        >
+                          <Avatar className="h-8 w-8 rounded-full">
+                            <AvatarImage
+                              src={group.image ?? ""}
+                              alt={group.name}
+                            />
+                            <AvatarFallback className="rounded-full">
+                              {group.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{group.name}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
+              {communities && communities.length > 0 && (
+                <>
+                  <SidebarGroupLabel>Communities</SidebarGroupLabel>
+                  {communities.map((community) => (
+                    <SidebarMenuItem key={community.id}>
+                      <SidebarMenuButton asChild>
+                        <a href={community.url}>
+                          <Avatar className="h-8 w-8 rounded-full">
+                            <AvatarImage
+                              src={community.image}
+                              alt={community.name}
+                            />
+                            <AvatarFallback className="rounded-full">
+                              {community.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{community.name}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
               <Separator className="bg-sidebar-border mx-2 w-auto" />
               <SidebarMenuItem key={"calendar"}>
                 <SidebarMenuButton asChild>

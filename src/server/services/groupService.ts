@@ -1,12 +1,17 @@
-import { generateOtp } from "~/lib/utils";
+import { generateOtp, validateEmails } from "~/lib/utils";
 import { sendVerificationEmail } from "./emailService";
 import {
   createUser,
   findUserByEmail,
   findUserByUsername,
+  getUsersByUsernameOrEmail,
   updateUser,
 } from "./userService";
-import { DB_GroupType_Zod, Partial_DB_GroupType_Zod } from "~/lib/types";
+import {
+  DB_GroupType_Zod,
+  Partial_DB_GroupType_Zod,
+  type GroupMember,
+} from "~/lib/types";
 import dayjs from "dayjs";
 import {
   adjectives,
@@ -15,7 +20,14 @@ import {
   uniqueNamesGenerator,
 } from "unique-names-generator";
 import z from "zod";
-import { groupMembers, groups, users } from "../db/schema";
+import {
+  groupMembers,
+  groups,
+  users,
+  type DB_GroupMemberType,
+  type DB_GroupType,
+  type DB_UserType,
+} from "../db/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 
@@ -30,13 +42,44 @@ export async function findGroupById(id: number) {
 }
 
 export async function findGroupByUsername(username: string) {
-  const group = await db
+  const groupId = await db
     .selectDistinct()
     .from(groups)
-    .leftJoin(groupMembers, eq(groupMembers.groupId, groups.id))
     .where(eq(groups.groupUsername, username));
 
-  return group[0] ?? null;
+  const rows = await db
+    .select({
+      group: groups,
+      member: groupMembers,
+      user: users,
+    })
+    .from(groups)
+    .leftJoin(groupMembers, eq(groupMembers.groupId, groups.id))
+    .innerJoin(users, eq(users.id, groupMembers.userId))
+    .where(eq(groups.groupUsername, username));
+
+  const result = (await rows).reduce<
+    Record<number, { group: DB_GroupType; groupMembers: GroupMember[] }>
+  >((acc, row) => {
+    const group = row.group;
+    const groupMember = row.member;
+    const user = row.user;
+    if (!acc[group.id]) {
+      acc[group.id] = { group, groupMembers: [] };
+    }
+    if (groupMember) {
+      acc[group.id]?.groupMembers.push({
+        ...groupMember,
+        username: user.username,
+        image: user.image,
+        email: user.email,
+        name: user.name,
+      });
+    }
+    return acc;
+  }, {});
+
+  return groupId[0]?.id ? result[groupId[0]?.id] : null;
 }
 
 export async function createGroup(groupToCreate: {
@@ -45,6 +88,7 @@ export async function createGroup(groupToCreate: {
   friends: string[];
 }) {
   const { name, friends } = groupToCreate;
+
   if (!name) {
     return null;
   }
@@ -91,6 +135,7 @@ export async function getGroupsForUser(userId: number) {
     .from(groups)
     .leftJoin(groupMembers, eq(groupMembers.groupId, groups.id))
     .leftJoin(users, eq(groupMembers.userId, users.id))
+    .where(eq(users.id, userId))
     .orderBy(groups.id);
 
   return groupsForUser.map((group) => ({
@@ -98,13 +143,13 @@ export async function getGroupsForUser(userId: number) {
     name: group.groups.name,
     groupUsername: group.groups.groupUsername,
     image: group.groups.image,
-    members: group.groupMembers
+    members: group.group_members
       ? [
           {
-            id: group.groupMembers.userId,
+            id: group.group_members.userId,
             name: group.users?.name,
             email: group.users?.email,
-            role: group.groupMembers.role,
+            role: group.group_members.role,
             isVerified: group.users?.isVerified,
           },
         ]
@@ -128,4 +173,38 @@ export async function updateGroup(
 
   if (!group[0]) return null;
   return await findGroupById(group[0]?.insertId);
+}
+
+export async function addGroupMembers(
+  userId: number,
+  groupId: number,
+  groupUsername: string,
+  members: { usernameOrEmail: string; role: "admin" | "member" }[],
+) {
+  const emails = await validateEmails(members.map((m) => m.usernameOrEmail));
+  const membersToCreateByEmails = members.filter((m) =>
+    emails.includes(m.usernameOrEmail),
+  );
+  const usernames = members.filter((m) => !emails.includes(m.usernameOrEmail));
+
+  const membersToCreate: (DB_UserType & { role: "admin" | "member" })[] = [];
+  for (const obj of usernames) {
+    const user = await findUserByUsername(obj.usernameOrEmail);
+    if (user) {
+      membersToCreate.push({ ...user, role: obj.role });
+    }
+  }
+
+  for (const member of membersToCreate) {
+    await db
+      .insert(groupMembers)
+      .values({
+        groupId: groupId,
+        userId: member.id,
+        role: member.role,
+      })
+      .$returningId();
+  }
+
+  return await findGroupByUsername(groupUsername);
 }

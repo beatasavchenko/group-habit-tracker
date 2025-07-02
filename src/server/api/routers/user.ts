@@ -9,6 +9,7 @@ import {
 } from "~/server/api/trpc";
 import {
   findUserByEmail,
+  findUserById,
   getUsersByUsernameOrEmail,
   updateUser,
 } from "~/server/services/userService";
@@ -29,7 +30,14 @@ export const userRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await getUsersByUsernameOrEmail(input.username, input.email);
+      const res = await getUsersByUsernameOrEmail(ctx.userId, input.username, input.email);
+      return res ?? null;
+    }),
+  getUserById: protectedProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!input) return null;
+      const res = await findUserById(input.userId);
       return res ?? null;
     }),
 });

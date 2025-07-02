@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { z } from "zod";
-import { habits } from "~/server/db/schema";
+import { habits, type DB_GroupMemberType } from "~/server/db/schema";
 
 export type Tag = {
   value: string;
@@ -49,3 +49,10 @@ export const DB_GroupType_Zod = z.object({
 export const Partial_DB_GroupType_Zod = DB_GroupType_Zod.partial().extend({
   id: DB_GroupType_Zod.shape.id,
 });
+
+export type GroupMember = DB_GroupMemberType & {
+  email: string;
+  username: string;
+  name: string | null;
+  image: string | null;
+};

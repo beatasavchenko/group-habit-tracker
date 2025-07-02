@@ -11,19 +11,25 @@ import {
 import { Button } from "./ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-type ComboboxComponentProps<T> = {
+type SelectedValue =
+  | string
+  | { usernameOrEmail: string; role: "admin" | "member" };
+
+type ComboboxComponentProps<T, V = SelectedValue> = {
   items: T[];
-  selectedValues: string[] | undefined;
-  setSelectedValues: React.Dispatch<React.SetStateAction<string[] | undefined>>;
+  selectedValues: V[] | undefined;
+  setSelectedValues: React.Dispatch<React.SetStateAction<V[] | undefined>>;
   getItemValue: (item: T) => string;
+  getItemImage?: (item: T) => string | null;
   getItemLabel: (item: T) => string;
   inputValue: string;
   setInputValue: React.Dispatch<React.SetStateAction<string>>;
   description?: string;
   placeholder?: string;
   allowCustomInput?: boolean;
-  onCustomValueAdd?: (value: string) => void;
+  onCustomValueAdd?: (value: string) => V;
   renderItem?: (item: T) => React.ReactNode;
 };
 
@@ -32,6 +38,7 @@ export default function ComboboxComponent<T>({
   selectedValues,
   setSelectedValues,
   getItemValue,
+  getItemImage,
   getItemLabel,
   inputValue,
   setInputValue,
@@ -51,12 +58,22 @@ export default function ComboboxComponent<T>({
     return regex.test(email);
   };
 
+  console.log(selectedValues);
+  
   const toggleSelection = (value: string) => {
-    setSelectedValues((prev) =>
-      prev?.includes(value)
-        ? prev.filter((v) => v !== value)
-        : [...(prev ?? []), value],
+    const next = selectedValues ?? [];
+
+    const exists = next.some((v) =>
+      typeof v === "string" ? v === value : v.usernameOrEmail === value,
     );
+
+    const updatedValues = exists
+      ? next.filter((v) =>
+          typeof v === "string" ? v !== value : v.usernameOrEmail !== value,
+        )
+      : [...next, value as (typeof next)[number]];
+
+    setSelectedValues(updatedValues);
   };
 
   const handleCustomInput = () => {
@@ -70,7 +87,7 @@ export default function ComboboxComponent<T>({
   };
 
   return (
-    <div className="space-y-1">
+    <div className="w-full space-y-1">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -90,9 +107,10 @@ export default function ComboboxComponent<T>({
             <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
-          <Command>
+        <PopoverContent className="popover-content-width-full w-full p-0">
+          <Command className="w-full">
             <CommandInput
+              className="w-full"
               ref={inputRef}
               placeholder={placeholder}
               value={inputValue}
@@ -113,6 +131,7 @@ export default function ComboboxComponent<T>({
               <CommandGroup>
                 {items.map((item) => {
                   const value = getItemValue(item);
+                  const image = getItemImage ? getItemImage(item) : null;
                   const label = getItemLabel(item);
 
                   return (
@@ -122,7 +141,19 @@ export default function ComboboxComponent<T>({
                       onSelect={() => toggleSelection(value)}
                     >
                       {/* {renderItem ? renderItem(item) : label} */}
-                      <span className="truncate">{label}</span>
+                      {image ? (
+                        <div>
+                          <Avatar className="h-8 w-8 rounded-full">
+                            <AvatarImage src={image ?? undefined} alt={value} />
+                            <AvatarFallback className="rounded-full">
+                              {label.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate">{label}</span>
+                        </div>
+                      ) : (
+                        <span className="truncate">{label}</span>
+                      )}
                       <Check
                         className={cn(
                           "ml-auto h-4 w-4",
