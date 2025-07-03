@@ -12,15 +12,12 @@ import { Button } from "./ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-
-type SelectedValue =
-  | string
-  | { usernameOrEmail: string; role: "admin" | "member" };
+import type { SelectedValue } from "~/lib/types";
 
 type ComboboxComponentProps<T, V = SelectedValue> = {
   items: T[];
-  selectedValues: V[] | undefined;
-  setSelectedValues: React.Dispatch<React.SetStateAction<V[] | undefined>>;
+  selectedValues: V[];
+  setSelectedValues: React.Dispatch<React.SetStateAction<V[]>>;
   getItemValue: (item: T) => string;
   getItemImage?: (item: T) => string | null;
   getItemLabel: (item: T) => string;
@@ -58,30 +55,29 @@ export default function ComboboxComponent<T>({
     return regex.test(email);
   };
 
-  console.log(selectedValues);
-  
-  const toggleSelection = (value: string) => {
-    const next = selectedValues ?? [];
+  const toggleSelection = (value: SelectedValue) => {
+    setOpen(false);
+    setSelectedValues((prev) => {
+      const next = prev ?? [];
+      const exists = next.some(
+        (v) => v.usernameOrEmail === value.usernameOrEmail,
+      );
 
-    const exists = next.some((v) =>
-      typeof v === "string" ? v === value : v.usernameOrEmail === value,
-    );
-
-    const updatedValues = exists
-      ? next.filter((v) =>
-          typeof v === "string" ? v !== value : v.usernameOrEmail !== value,
-        )
-      : [...next, value as (typeof next)[number]];
-
-    setSelectedValues(updatedValues);
+      return exists
+        ? next.filter((v) => v.usernameOrEmail !== value.usernameOrEmail)
+        : [...next, value];
+    });
   };
 
   const handleCustomInput = () => {
     const trimmed = inputValue.trim();
     if (!isValidEmail(trimmed)) return;
 
-    if (!selectedValues?.includes(trimmed)) {
-      setSelectedValues((prev) => [...(prev ?? []), trimmed]);
+    if (!selectedValues?.some((v) => v.usernameOrEmail === trimmed)) {
+      setSelectedValues((prev) => [
+        ...(prev ?? []),
+        { usernameOrEmail: trimmed, role: "member" },
+      ]);
     }
     setInputValue("");
   };
@@ -99,7 +95,9 @@ export default function ComboboxComponent<T>({
             {(selectedValues?.length ?? 0) > 0
               ? items
                   .filter((item) =>
-                    selectedValues?.includes(getItemValue(item)),
+                    selectedValues?.some(
+                      (v) => v.usernameOrEmail === getItemValue(item),
+                    ),
                   )
                   .map((item) => getItemLabel(item))
                   .join(", ")
@@ -138,7 +136,13 @@ export default function ComboboxComponent<T>({
                     <CommandItem
                       key={value}
                       value={value}
-                      onSelect={() => toggleSelection(value)}
+                      onSelect={(selectedValue) => {
+                        console.log("selectedValue:", selectedValue);
+                        toggleSelection({
+                          usernameOrEmail: selectedValue,
+                          role: "member",
+                        });
+                      }}
                     >
                       {/* {renderItem ? renderItem(item) : label} */}
                       {image ? (
@@ -157,7 +161,9 @@ export default function ComboboxComponent<T>({
                       <Check
                         className={cn(
                           "ml-auto h-4 w-4",
-                          selectedValues?.includes(value)
+                          selectedValues?.some(
+                            (v) => v.usernameOrEmail === value,
+                          )
                             ? "opacity-100"
                             : "opacity-0",
                         )}
@@ -168,7 +174,9 @@ export default function ComboboxComponent<T>({
 
                 {allowCustomInput &&
                   isValidEmail(inputValue.trim()) &&
-                  !selectedValues?.includes(inputValue.trim()) &&
+                  !selectedValues?.filter(
+                    (v) => v.usernameOrEmail === inputValue.trim(),
+                  ) &&
                   !items.some(
                     (item) => getItemValue(item) === inputValue.trim(),
                   ) && (

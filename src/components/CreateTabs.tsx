@@ -275,9 +275,9 @@ export function CreateTabs({
                     <FormItem>
                       <FormLabel>Friends</FormLabel>
                       <FormControl>
-                        <ComboboxComponent
+                        {/* <ComboboxComponent
                           items={friendsQuery.data ?? []}
-                          selectedValues={selectedFriends?.map(String)}
+                          selectedValues={selectedFriends?.map(String) ?? []}
                           setSelectedValues={(ids) => {
                             if (Array.isArray(ids)) {
                               setSelectedFriends(ids.map(String));
@@ -297,7 +297,7 @@ export function CreateTabs({
                             setFriendEmails([...(friendEmails ?? []), email]);
                             return email;
                           }}
-                        />
+                        /> */}
                       </FormControl>
                       <FormMessage />
                     </FormItem>

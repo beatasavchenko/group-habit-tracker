@@ -1,5 +1,10 @@
-import { and, eq, like, ne, or, sql } from "drizzle-orm";
-import { users, type DB_UserType } from "~/server/db/schema";
+import { and, eq, like, ne, not, notInArray, or, sql } from "drizzle-orm";
+import {
+  groupMembers,
+  groups,
+  users,
+  type DB_UserType,
+} from "~/server/db/schema";
 import { db } from "~/server/db";
 import {
   uniqueNamesGenerator,
@@ -94,6 +99,35 @@ export async function getUsersByUsernameOrEmail(
           like(sql`LOWER(${users.email})`, `%${email?.toLowerCase()}%`),
         ),
         ne(users.id, userId),
+      ),
+    );
+
+  return usersList.length > 0 ? usersList : null;
+}
+
+export async function getUsersByUsernameOrEmailForGroup(
+  userId: number,
+  groupId: number,
+  username?: string,
+  email?: string,
+) {
+  const usersList = await db
+    .select()
+    .from(users)
+    .where(
+      and(
+        or(
+          like(sql`LOWER(${users.username})`, `%${username?.toLowerCase()}%`),
+          like(sql`LOWER(${users.email})`, `%${email?.toLowerCase()}%`),
+        ),
+        ne(users.id, userId),
+        notInArray(
+          users.id,
+          db
+            .select({ userId: groupMembers.userId })
+            .from(groupMembers)
+            .where(eq(groupMembers.groupId, groupId)),
+        ),
       ),
     );
 

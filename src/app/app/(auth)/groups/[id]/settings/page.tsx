@@ -1,6 +1,7 @@
 "use client";
 
-import { EllipsisVertical, Upload, UserPlus } from "lucide-react";
+import { ArrowLeft, EllipsisVertical, Upload, UserPlus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -13,10 +14,19 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogTitle,
 } from "~/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Select,
@@ -27,6 +37,7 @@ import {
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
+import type { SelectedValue } from "~/lib/types";
 import type { DB_UserType } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
@@ -34,6 +45,30 @@ export default function Settings() {
   const params = useParams<{ id: string }>();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false);
+
+  const [memberIdToDelete, setMemberIdToDelete] = useState<number | null>(null);
+
+  const { data: session, status } = useSession();
+
+  const userId = session?.user?.id;
+
+  const deleteMember = api.group.deleteGroupMember.useMutation({
+    onMutate: () => {
+      setDeleteMemberDialogOpen(false);
+      setMemberIdToDelete(null);
+      toast.loading("Deleting group member...");
+    },
+    onSuccess: (data) => {
+      toast.dismiss();
+      toast.success("Group member deleted successfully!");
+      utils.group.getGroupByUsername.invalidate({ groupUsername: params.id });
+    },
+    onError: (error) => {
+      toast.dismiss();
+      toast.error("Error deleting group member.");
+    },
+  });
 
   const router = useRouter();
 
@@ -59,8 +94,8 @@ export default function Settings() {
   const isUpdating = isLoading || updateGroup.isPending;
 
   const [selectedFriends, setSelectedFriends] = useState<
-    { usernameOrEmail: string; role: "admin" | "member" }[] | undefined
-  >();
+    { usernameOrEmail: string; role: "admin" | "member" }[]
+  >([]);
 
   const [friendEmails, setFriendEmails] = useState<string[] | undefined>();
 
@@ -73,20 +108,43 @@ export default function Settings() {
     return () => clearTimeout(timeout);
   }, [friendInputValue]);
 
-  const friendsQuery = api.user.getUsersByUsernameOrEmail.useQuery(
-    { username: debouncedValue },
+  const friendsQuery = api.user.getUsersByUsernameOrEmailForGroup.useQuery(
+    { username: debouncedValue, groupId: Number(groupData?.group.id) },
     { enabled: debouncedValue.length > 1 },
   );
 
-  const addGroupMembers = api.group.addGroupMembers.useMutation();
+  const addGroupMembers = api.group.addGroupMembers.useMutation({
+    onMutate: () => {
+      toast.loading("Adding group members...");
+    },
+    onSuccess: (data) => {
+      setSelectedFriends([]);
+      setDialogOpen(false);
+      toast.dismiss();
+      toast.success("Group members added successfully!");
+      utils.group.getGroupByUsername.invalidate({ groupUsername: params.id });
+    },
+    onError: (error) => {
+      toast.dismiss();
+      toast.error("Error adding group members.");
+    },
+  });
 
   console.log(selectedFriends);
+
+  const [selectedOption, setSelectedOption] = useState("member");
 
   return (
     <div className="m-10 flex w-full flex-col items-center justify-center">
       <div className="flex w-[80vw] flex-col px-16">
         <div className="mb-16 flex w-full items-center justify-between">
-          <h1 className="truncate text-4xl font-bold">Group Settings</h1>
+          <div className="flex items-center gap-5">
+            <ArrowLeft
+              className="h-10 w-10 hover:cursor-pointer"
+              onClick={() => router.back()}
+            />
+            <h1 className="truncate text-4xl font-bold">Group Settings</h1>
+          </div>
           <EllipsisVertical className="items-end" />
         </div>
 
@@ -167,7 +225,25 @@ export default function Settings() {
                   <Badge className="rounded-xl px-6 text-sm">
                     {member.role}
                   </Badge>
-                  <EllipsisVertical />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <EllipsisVertical
+                        className={
+                          member.userId !== userId ? "block" : "hidden"
+                        }
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel
+                        onClick={() => {
+                          setDeleteMemberDialogOpen(true);
+                          setMemberIdToDelete(member.userId);
+                        }}
+                      >
+                        Delete a member
+                      </DropdownMenuLabel>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div className="flex flex-col">
                   <h1 className="truncate text-3xl font-bold">
@@ -180,22 +256,41 @@ export default function Settings() {
           ))}
         </div>
       </div>
+      <Dialog
+        open={deleteMemberDialogOpen}
+        onOpenChange={(value) => setDeleteMemberDialogOpen(value)}
+      >
+        <DialogContent>
+          <DialogTitle>Delete a member</DialogTitle>
+          <div>Are you sure? This action is irreversible.</div>
+          <DialogFooter>
+            <DialogClose>Close</DialogClose>
+            <Button
+              onClick={() => {
+                if (memberIdToDelete)
+                  deleteMember.mutate({
+                    groupId: Number(groupData?.group.id),
+                    groupMemberId: memberIdToDelete,
+                  });
+              }}
+              variant="destructive"
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="flex w-full flex-col items-center justify-center">
           <DialogTitle>Add new members</DialogTitle>
           <ScrollArea className="flex h-[40vh] w-full flex-col items-center gap-4">
             <ComboboxComponent
               items={friendsQuery.data ?? []}
-              selectedValues={selectedFriends?.map(String)}
-              setSelectedValues={(ids) => {
-                if (Array.isArray(ids)) {
-                  setSelectedFriends(
-                    ids.map((el) => ({
-                      usernameOrEmail: String(el),
-                      role: "member",
-                    })),
-                  );
-                }
+              selectedValues={selectedFriends?.map(
+                (item) => item as SelectedValue,
+              )}
+              setSelectedValues={(value) => {
+                setSelectedFriends(value);
               }}
               getItemValue={(friend: DB_UserType) => friend.username}
               getItemImage={(friend: DB_UserType) => friend.image}
@@ -210,18 +305,37 @@ export default function Settings() {
               })}
             />
             {(selectedFriends?.length ?? 0) > 0 && (
-              <div className="w-full">
+              <div className="mt-4 w-full">
                 <h1 className="mb-2 truncate text-3xl font-bold">
                   Members to add
                 </h1>
                 {/* <SelectedFriends /> */}
                 <div className="flex flex-col gap-2">
                   {selectedFriends?.map((friend) => (
-                    <div className="flex items-center justify-between">
+                    <div
+                      className="flex items-center justify-between"
+                      key={friend.usernameOrEmail}
+                    >
                       {friend.usernameOrEmail}
-                      <Select value={"member"}>
+                      <Select
+                        value={friend.role ?? "member"}
+                        // value={"member"}
+                        onValueChange={(value) => {
+                          setSelectedFriends((prev) => {
+                            prev.map((v) =>
+                              v.usernameOrEmail === friend.usernameOrEmail
+                                ? {
+                                    usernameOrEmail: v.usernameOrEmail,
+                                    role: value as "member" | "admin",
+                                  }
+                                : v,
+                            );
+                            return prev;
+                          });
+                        }}
+                      >
                         <SelectTrigger className="w-36">
-                          <SelectValue placeholder="Role" />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>

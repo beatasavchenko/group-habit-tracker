@@ -9,6 +9,7 @@ import {
 import {
   addGroupMembers,
   createGroup,
+  deleteGroupMember,
   findGroupById,
   findGroupByUsername,
   getGroupsForUser,
@@ -80,6 +81,18 @@ export const groupRouter = createTRPCRouter({
           },
         ],
       );
+      return res ?? null;
+    }),
+  deleteGroupMember: protectedProcedure
+    .input(
+      z.object({
+        groupId: z.number(),
+        groupMemberId: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user.username) return null;
+      const res = await deleteGroupMember(input.groupId, input.groupMemberId);
       return res ?? null;
     }),
 });

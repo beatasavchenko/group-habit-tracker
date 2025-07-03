@@ -11,6 +11,7 @@ import {
   findUserByEmail,
   findUserById,
   getUsersByUsernameOrEmail,
+  getUsersByUsernameOrEmailForGroup,
   updateUser,
 } from "~/server/services/userService";
 
@@ -30,7 +31,29 @@ export const userRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await getUsersByUsernameOrEmail(ctx.userId, input.username, input.email);
+      const res = await getUsersByUsernameOrEmail(
+        ctx.userId,
+        input.username,
+        input.email,
+      );
+      return res ?? null;
+    }),
+  getUsersByUsernameOrEmailForGroup: protectedProcedure
+    .input(
+      z.object({
+        username: z.string().optional(),
+        email: z.string().optional(),
+        groupId: z.number(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      if (!input) return null;
+      const res = await getUsersByUsernameOrEmailForGroup(
+        ctx.userId,
+        input.groupId,
+        input.username,
+        input.email,
+      );
       return res ?? null;
     }),
   getUserById: protectedProcedure

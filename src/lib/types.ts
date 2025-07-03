@@ -56,3 +56,8 @@ export type GroupMember = DB_GroupMemberType & {
   name: string | null;
   image: string | null;
 };
+
+export type SelectedValue = {
+  usernameOrEmail: string;
+  role: "admin" | "member";
+};

@@ -29,7 +29,7 @@ import {
   type DB_UserType,
 } from "../db/schema";
 import { db } from "../db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export async function findGroupById(id: number) {
   const group = await db
@@ -203,8 +203,24 @@ export async function addGroupMembers(
         userId: member.id,
         role: member.role,
       })
-      .$returningId();
+      .onDuplicateKeyUpdate({ set: { role: member.role } });
   }
 
   return await findGroupByUsername(groupUsername);
+}
+
+export async function deleteGroupMember(
+  groupId: number,
+  groupMemberId: number,
+) {
+  const groupMemberToDelete = await db
+    .delete(groupMembers)
+    .where(
+      and(
+        eq(groupMembers.userId, groupMemberId),
+        eq(groupMembers.groupId, groupId),
+      ),
+    );
+
+  return groupMemberToDelete[0].insertId;
 }
