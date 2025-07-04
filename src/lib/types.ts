@@ -61,3 +61,30 @@ export type SelectedValue = {
   usernameOrEmail: string;
   role: "admin" | "member";
 };
+
+export const frequencyEnum = ["day", "week", "month"] as const;
+
+export const DB_HabitType_Zod = z.object({
+  id: z.number().int().nonnegative(),
+  name: z.string(),
+  description: z.string().nullable(),
+  color: z.string().nullable(),
+  goal: z.number().nullable(),
+  unit: z.string().nullable(),
+  frequency: z.enum(frequencyEnum),
+  groupId: z.number(),
+  createdAt: z.date(),
+  updatedAt: z.date().nullable(),
+});
+
+export const DB_HabitType_Zod_Create = z.object({
+  name: z.string(),
+  description: z.string().optional().nullable(),
+  color: z.string(),
+  goal: z.number().optional().nullable(),
+  unit: z.string().optional().nullable(),
+  frequency: z.enum(frequencyEnum),
+  groupId: z.number(),
+});
+
+export type DB_HabitType_Create = z.infer<typeof DB_HabitType_Zod_Create>;

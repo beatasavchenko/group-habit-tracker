@@ -141,7 +141,7 @@ export default function Settings() {
           <div className="flex items-center gap-5">
             <ArrowLeft
               className="h-10 w-10 hover:cursor-pointer"
-              onClick={() => router.back()}
+              onClick={() => router.push(`/app/groups/${params.id}`)}
             />
             <h1 className="truncate text-4xl font-bold">Group Settings</h1>
           </div>

@@ -7,7 +7,9 @@ import {
   bigint,
   boolean,
   index,
+  int,
   primaryKey,
+  singlestoreEnum,
   singlestoreTable,
   singlestoreTableCreator,
   text,
@@ -117,28 +119,37 @@ export const groupMemberRelations = relations(groupMembers, ({ one }) => ({
 }));
 export type DB_GroupMemberType = typeof groupMembers.$inferSelect;
 
-export const communities = createTable("communities", {
-  id: bigint("id", { mode: "number", unsigned: true })
-    .primaryKey()
-    .autoincrement(),
-  name: text("name"),
-  tags: text("tags").$type<number[]>(),
-  members: text("members").$type<number[]>(),
-  image: text("image"),
-  createdAt: timestamp().defaultNow().notNull(),
-  updatedAt: timestamp().$onUpdate(() => new Date()),
-});
+// export const communities = createTable("communities", {
+//   id: bigint("id", { mode: "number", unsigned: true })
+//     .primaryKey()
+//     .autoincrement(),
+//   name: text("name"),
+//   tags: text("tags").$type<number[]>(),
+//   members: text("members").$type<number[]>(),
+//   image: text("image"),
+//   createdAt: timestamp().defaultNow().notNull(),
+//   updatedAt: timestamp().$onUpdate(() => new Date()),
+// });
 
-export const habits = createTable("habits", {
-  id: bigint("id", { mode: "number", unsigned: true })
-    .primaryKey()
-    .autoincrement(),
-  name: text("name"),
-  description: text("description"),
-  basicGoal: text("basicGoal").$type<string>(),
-  createdAt: timestamp().defaultNow().notNull(),
-  updatedAt: timestamp().$onUpdate(() => new Date()),
-});
+export const habits = createTable(
+  "habits",
+  {
+    id: bigint("id", { mode: "number", unsigned: true })
+      .primaryKey()
+      .autoincrement(),
+    name: text("name").notNull(),
+    description: text("description"),
+    color: text("color").default("#54478c").notNull(),
+    goal: bigint("goal", { mode: "number", unsigned: true }),
+    unit: text("unit"),
+    frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
+    groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().$onUpdate(() => new Date()),
+  },
+  (t) => [primaryKey({ columns: [t.groupId] })],
+);
+export type DB_HabitType = typeof habits.$inferSelect;
 
 export const personalHabit = createTable("personalHabits", {
   id: bigint("id", { mode: "number", unsigned: true })
