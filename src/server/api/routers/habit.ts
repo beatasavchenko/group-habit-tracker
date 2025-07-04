@@ -1,7 +1,4 @@
-import { TRPCError } from "@trpc/server";
 import {
-  DB_GroupType_Zod,
-  DB_HabitType_Zod,
   DB_HabitType_Zod_Create,
   Partial_DB_GroupType_Zod,
 } from "~/lib/types";
@@ -20,7 +17,6 @@ import {
   updateGroup,
 } from "~/server/services/groupService";
 import { createHabit } from "~/server/services/habitService";
-import type { DB_HabitType } from "~/server/db/schema";
 import z from "zod";
 
 export const habitRouter = createTRPCRouter({

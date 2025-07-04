@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Palette } from "lucide-react";
+import { Check, Palette, SendHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -46,6 +46,8 @@ import {
 } from "~/components/ui/popover";
 import { frequencyEnum } from "~/lib/types";
 import { toast } from "sonner";
+import { MessageBar } from "~/components/MessageBar";
+import { useSession } from "next-auth/react";
 
 const colors = [
   "#54478c",
@@ -98,16 +100,23 @@ export default function GroupPage() {
   const selectedColor = form.watch("color");
   const frequency = form.watch("frequency");
 
-  console.log(form.formState.errors);
-
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(form.formState);
-
     createHabit.mutate({ ...values, groupId: Number(groupData?.group.id) });
   }
 
+  const messages = api.message.getGroupMessages.useQuery(
+    {
+      groupId: Number(groupData?.group.id),
+    },
+    { enabled: !!groupData?.group.id },
+  );
+
+  const { data: session, status } = useSession();
+
+  const userId = session?.user?.id;
+
   return (
-    <div className="flex h-screen w-full flex-col">
+    <div className="static flex h-screen w-full flex-col">
       <Header
         info={groupData}
         name={groupData?.group?.name ?? "My Group"}
@@ -233,7 +242,29 @@ export default function GroupPage() {
           </div>
         }
       />
-      <ScrollArea className="h-[calc(100vh-40px)]"></ScrollArea>
+      <ScrollArea className="h-[calc(100vh-40px)]">
+        {messages.data?.map((message) => {
+          const isOwnMessage = message.userId === userId;
+
+          return (
+            <div
+              key={message.id}
+              className={`flex w-full ${isOwnMessage ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                  isOwnMessage
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-black"
+                }`}
+              >
+                {message.contents}
+              </div>
+            </div>
+          );
+        })}
+      </ScrollArea>
+      <MessageBar info={groupData} />
     </div>
   );
 }

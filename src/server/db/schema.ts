@@ -164,3 +164,20 @@ export const personalHabit = createTable("personalHabits", {
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().$onUpdate(() => new Date()),
 });
+
+export const messages = createTable(
+  "messages",
+  {
+    id: bigint("id", { mode: "number", unsigned: true })
+      .primaryKey()
+      .autoincrement(),
+    type: singlestoreEnum(["message", "event"]).notNull(),
+    contents: text("contents").notNull(),
+    groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
+    userId: bigint("user_id", { mode: "number", unsigned: true }),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().$onUpdate(() => new Date()),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.groupId] })],
+);
+export type DB_MessageType = typeof messages.$inferSelect;

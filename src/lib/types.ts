@@ -64,19 +64,6 @@ export type SelectedValue = {
 
 export const frequencyEnum = ["day", "week", "month"] as const;
 
-export const DB_HabitType_Zod = z.object({
-  id: z.number().int().nonnegative(),
-  name: z.string(),
-  description: z.string().nullable(),
-  color: z.string().nullable(),
-  goal: z.number().nullable(),
-  unit: z.string().nullable(),
-  frequency: z.enum(frequencyEnum),
-  groupId: z.number(),
-  createdAt: z.date(),
-  updatedAt: z.date().nullable(),
-});
-
 export const DB_HabitType_Zod_Create = z.object({
   name: z.string(),
   description: z.string().optional().nullable(),
@@ -88,3 +75,14 @@ export const DB_HabitType_Zod_Create = z.object({
 });
 
 export type DB_HabitType_Create = z.infer<typeof DB_HabitType_Zod_Create>;
+
+export const typeEnum = ["message", "event"] as const;
+
+export const DB_MessageType_Zod_Create = z.object({
+  type: z.enum(typeEnum),
+  contents: z.string(),
+  groupId: z.number(),
+  userId: z.number().optional(),
+});
+
+export type DB_MessageType_Create = z.infer<typeof DB_MessageType_Zod_Create>;
