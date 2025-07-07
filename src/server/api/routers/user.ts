@@ -8,8 +8,8 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import {
-  findUserByEmail,
-  findUserById,
+  getUserByEmail,
+  getUserById,
   getUsersByUsernameOrEmail,
   getUsersByUsernameOrEmailForGroup,
   updateUser,
@@ -60,7 +60,7 @@ export const userRouter = createTRPCRouter({
     .input(z.object({ userId: z.number() }))
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await findUserById(input.userId);
+      const res = await getUserById(input.userId);
       return res ?? null;
     }),
 });

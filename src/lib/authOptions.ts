@@ -4,7 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import {
   createUser,
-  findUserByEmail,
+  getUserByEmail,
   updateUser,
 } from "~/server/services/userService";
 
@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.code) return null;
 
-        const user = await findUserByEmail(credentials.email);
+        const user = await getUserByEmail(credentials.email);
         if (!user || user.code !== credentials.code) return null;
 
         await updateUser(user.id, {
@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user }) {
       if (!user.email) return false;
 
-      let dbUser = await findUserByEmail(user.email);
+      let dbUser = await getUserByEmail(user.email);
       if (!dbUser) {
         dbUser = await createUser({
           name: user.name ?? user.email.split("@")[0],
@@ -67,7 +67,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       let email = user?.email ?? token.email;
       if (email) {
-        const dbUser = await findUserByEmail(email);
+        const dbUser = await getUserByEmail(email);
         if (dbUser) {
           token.id = dbUser.id;
           token.username = dbUser.username;

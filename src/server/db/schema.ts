@@ -172,12 +172,14 @@ export const messages = createTable(
       .primaryKey()
       .autoincrement(),
     type: singlestoreEnum(["message", "event"]).notNull(),
+    eventType: singlestoreEnum(["habit_created"]),
     contents: text("contents").notNull(),
     groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
-    userId: bigint("user_id", { mode: "number", unsigned: true }),
+    userId: bigint("user_id", { mode: "number", unsigned: true }).notNull(),
+    habitId: bigint("habit_id", { mode: "number", unsigned: true }),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp().$onUpdate(() => new Date()),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.groupId] })],
+  (t) => [primaryKey({ columns: [t.id] })],
 );
 export type DB_MessageType = typeof messages.$inferSelect;

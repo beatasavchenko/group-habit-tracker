@@ -13,7 +13,7 @@ import {
   NumberDictionary,
 } from "unique-names-generator";
 
-export async function findUserByEmail(email: string) {
+export async function getUserByEmail(email: string) {
   const user = await db
     .selectDistinct()
     .from(users)
@@ -22,7 +22,7 @@ export async function findUserByEmail(email: string) {
   return user[0] ?? null;
 }
 
-export async function findUserByUsername(username: string) {
+export async function getUserByUsername(username: string) {
   const user = await db
     .selectDistinct()
     .from(users)
@@ -31,7 +31,7 @@ export async function findUserByUsername(username: string) {
   return user[0] ?? null;
 }
 
-export async function findUserById(id: number) {
+export async function getUserById(id: number) {
   const user = await db.selectDistinct().from(users).where(eq(users.id, id));
 
   return user[0] ?? null;
@@ -62,7 +62,7 @@ export async function createUser(userToCreate: Partial<DB_UserType>) {
     .$returningId();
 
   if (!user[0]) return null;
-  return await findUserById(user[0]?.id);
+  return await getUserById(user[0]?.id);
 }
 
 export async function updateUser(
@@ -81,7 +81,7 @@ export async function updateUser(
     .$dynamic();
 
   if (!user[0]) return null;
-  return await findUserById(user[0]?.insertId);
+  return await getUserById(user[0]?.insertId);
 }
 
 export async function getUsersByUsernameOrEmail(

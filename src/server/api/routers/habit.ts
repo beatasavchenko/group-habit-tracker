@@ -1,7 +1,4 @@
-import {
-  DB_HabitType_Zod_Create,
-  Partial_DB_GroupType_Zod,
-} from "~/lib/types";
+import { DB_HabitType_Zod_Create, Partial_DB_GroupType_Zod } from "~/lib/types";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -11,8 +8,8 @@ import {
   addGroupMembers,
   createGroup,
   deleteGroupMember,
-  findGroupById,
-  findGroupByUsername,
+  getGroupById,
+  getGroupByUsername,
   getGroupsForUser,
   updateGroup,
 } from "~/server/services/groupService";
@@ -24,7 +21,7 @@ export const habitRouter = createTRPCRouter({
     .input(DB_HabitType_Zod_Create)
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user.username) return null;
-      const res = await createHabit(input);
+      const res = await createHabit(input, ctx.session.user.id);
       return res ?? null;
     }),
   getGroupsForUser: protectedProcedure.query(async ({ ctx, input }) => {
@@ -35,14 +32,14 @@ export const habitRouter = createTRPCRouter({
     .input(z.object({ groupId: z.number() }))
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await findGroupById(input.groupId);
+      const res = await getGroupById(input.groupId);
       return res ?? null;
     }),
   getGroupByUsername: protectedProcedure
     .input(z.object({ groupUsername: z.string() }))
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await findGroupByUsername(input.groupUsername);
+      const res = await getGroupByUsername(input.groupUsername);
       return res ?? null;
     }),
   updateGroup: protectedProcedure

@@ -2,8 +2,8 @@ import { generateOtp, validateEmails } from "~/lib/utils";
 import { sendVerificationEmail } from "./emailService";
 import {
   createUser,
-  findUserByEmail,
-  findUserByUsername,
+  getUserByEmail,
+  getUserByUsername,
   getUsersByUsernameOrEmail,
   updateUser,
 } from "./userService";
@@ -31,7 +31,7 @@ import {
 import { db } from "../db";
 import { and, eq } from "drizzle-orm";
 
-export async function findGroupById(id: number) {
+export async function getGroupById(id: number) {
   const group = await db
     .selectDistinct()
     .from(groups)
@@ -41,7 +41,7 @@ export async function findGroupById(id: number) {
   return group[0] ?? null;
 }
 
-export async function findGroupByUsername(username: string) {
+export async function getGroupByUsername(username: string) {
   const groupId = await db
     .selectDistinct()
     .from(groups)
@@ -113,7 +113,7 @@ export async function createGroup(groupToCreate: {
     .$returningId();
 
   friends.forEach(async (friend) => {
-    const user = await findUserByUsername(friend);
+    const user = await getUserByUsername(friend);
     if (!user) return;
     await db
       .insert(groupMembers)
@@ -126,7 +126,7 @@ export async function createGroup(groupToCreate: {
   });
 
   if (!group[0]) return null;
-  return await findGroupById(group[0]?.id);
+  return await getGroupById(group[0]?.id);
 }
 
 export async function getGroupsForUser(userId: number) {
@@ -172,7 +172,7 @@ export async function updateGroup(
     .$dynamic();
 
   if (!group[0]) return null;
-  return await findGroupById(group[0]?.insertId);
+  return await getGroupById(group[0]?.insertId);
 }
 
 export async function addGroupMembers(
@@ -189,7 +189,7 @@ export async function addGroupMembers(
 
   const membersToCreate: (DB_UserType & { role: "admin" | "member" })[] = [];
   for (const obj of usernames) {
-    const user = await findUserByUsername(obj.usernameOrEmail);
+    const user = await getUserByUsername(obj.usernameOrEmail);
     if (user) {
       membersToCreate.push({ ...user, role: obj.role });
     }
@@ -206,7 +206,7 @@ export async function addGroupMembers(
       .onDuplicateKeyUpdate({ set: { role: member.role } });
   }
 
-  return await findGroupByUsername(groupUsername);
+  return await getGroupByUsername(groupUsername);
 }
 
 export async function deleteGroupMember(

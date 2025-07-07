@@ -1,0 +1,1 @@
+ALTER TABLE `group-habit-tracker_messages` ADD `habit_id` bigint unsigned;

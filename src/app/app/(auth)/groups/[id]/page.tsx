@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Palette, SendHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
@@ -48,6 +48,8 @@ import { frequencyEnum } from "~/lib/types";
 import { toast } from "sonner";
 import { MessageBar } from "~/components/MessageBar";
 import { useSession } from "next-auth/react";
+import { parseMentionsAndHabits } from "~/lib/utils";
+import dayjs from "dayjs";
 
 const colors = [
   "#54478c",
@@ -82,6 +84,8 @@ export default function GroupPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const utils = api.useUtils();
+
   const createHabit = api.habit.createHabit.useMutation({
     onMutate: () => {
       toast.loading("Creating habit...");
@@ -89,6 +93,9 @@ export default function GroupPage() {
     onSuccess: (data) => {
       toast.dismiss();
       toast.success("Habit created successfully!");
+      utils.message.getGroupMessages.invalidate({
+        groupId: Number(groupData?.group.id),
+      });
       setDialogOpen(false);
     },
     onError: (error) => {
@@ -114,6 +121,12 @@ export default function GroupPage() {
   const { data: session, status } = useSession();
 
   const userId = session?.user?.id;
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.data?.length]);
 
   return (
     <div className="static flex h-screen w-full flex-col">
@@ -242,27 +255,56 @@ export default function GroupPage() {
           </div>
         }
       />
-      <ScrollArea className="h-[calc(100vh-40px)]">
-        {messages.data?.map((message) => {
-          const isOwnMessage = message.userId === userId;
+      <ScrollArea className="h-[calc(100vh-40px)] w-full overflow-y-auto px-8 py-4">
+        <div className="flex w-full flex-col gap-5">
+          {messages.data?.map((message) => {
+            const isOwnMessage = message.userId === userId;
+            const isEventMessage = message.type === "event";
 
-          return (
-            <div
-              key={message.id}
-              className={`flex w-full ${isOwnMessage ? "justify-end" : "justify-start"}`}
-            >
+            return (
               <div
-                className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                  isOwnMessage
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-black"
+                key={message.id}
+                className={`flex w-full ${
+                  isEventMessage
+                    ? "justify-center"
+                    : isOwnMessage
+                      ? "justify-end"
+                      : "justify-start"
                 }`}
               >
-                {message.contents}
+                <div className="w-[30vw] rounded-xl bg-gray-400 px-6 py-3">
+                  <div
+                    className={`${
+                      isEventMessage
+                        ? "text-center"
+                        : isOwnMessage
+                          ? "text-right"
+                          : "text-left"
+                    }`}
+                  >
+                    {parseMentionsAndHabits(
+                      message.contents,
+                      message.habitId ?? undefined,
+                    )}
+                  </div>
+
+                  {isEventMessage && message.eventType === "habit_created" && (
+                    <div className="mt-2 flex justify-end">
+                      <Button className="w-fit">Join</Button>
+                    </div>
+                  )}
+
+                  {!isEventMessage && (
+                    <div className="text-muted-foreground mt-2 flex justify-end text-sm">
+                      {dayjs(message.createdAt).format("MMM D, YYYY HH:mm")}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
       </ScrollArea>
       <MessageBar info={groupData} />
     </div>

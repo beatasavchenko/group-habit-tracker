@@ -77,12 +77,15 @@ export const DB_HabitType_Zod_Create = z.object({
 export type DB_HabitType_Create = z.infer<typeof DB_HabitType_Zod_Create>;
 
 export const typeEnum = ["message", "event"] as const;
+export const eventTypeEnum = ["habit_created"] as const;
 
 export const DB_MessageType_Zod_Create = z.object({
   type: z.enum(typeEnum),
+  eventType: z.enum(eventTypeEnum).optional(),
   contents: z.string(),
   groupId: z.number(),
-  userId: z.number().optional(),
+  userId: z.number(),
+  habitId: z.number().optional(),
 });
 
 export type DB_MessageType_Create = z.infer<typeof DB_MessageType_Zod_Create>;

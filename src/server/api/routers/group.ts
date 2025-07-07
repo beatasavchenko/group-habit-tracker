@@ -10,8 +10,8 @@ import {
   addGroupMembers,
   createGroup,
   deleteGroupMember,
-  findGroupById,
-  findGroupByUsername,
+  getGroupById,
+  getGroupByUsername,
   getGroupsForUser,
   updateGroup,
 } from "~/server/services/groupService";
@@ -38,14 +38,14 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ groupId: z.number() }))
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await findGroupById(input.groupId);
+      const res = await getGroupById(input.groupId);
       return res ?? null;
     }),
   getGroupByUsername: protectedProcedure
     .input(z.object({ groupUsername: z.string() }))
     .query(async ({ ctx, input }) => {
       if (!input) return null;
-      const res = await findGroupByUsername(input.groupUsername);
+      const res = await getGroupByUsername(input.groupUsername);
       return res ?? null;
     }),
   updateGroup: protectedProcedure

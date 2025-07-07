@@ -287,7 +287,7 @@ export function AppSidebar() {
                   ))}
                 </>
               )}
-              {communities && communities.length > 0 && (
+              {/* {communities && communities.length > 0 && (
                 <>
                   <SidebarGroupLabel>Communities</SidebarGroupLabel>
                   {communities.map((community) => (
@@ -309,7 +309,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   ))}
                 </>
-              )}
+              )} */}
               <Separator className="bg-sidebar-border mx-2 w-auto" />
               <SidebarMenuItem key={"calendar"}>
                 <SidebarMenuButton asChild>

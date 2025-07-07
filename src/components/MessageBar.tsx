@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import type { inferRouterOutputs } from "@trpc/server";
+import { info } from "console";
 
 type MessageBarProps = {
   info?: inferRouterOutputs<AppRouter>["group"]["getGroupByUsername"];
@@ -19,6 +20,8 @@ export const formSchema = DB_MessageType_Zod_Create.omit({
   type: true,
   groupId: true,
   userId: true,
+  eventType: true,
+  habitId: true,
 });
 
 export function MessageBar(props: MessageBarProps) {
@@ -30,9 +33,14 @@ export function MessageBar(props: MessageBarProps) {
     mode: "onChange",
   });
 
+  const utils = api.useUtils();
+
   const createMessage = api.message.createMessage.useMutation({
     onSuccess: () => {
       form.reset();
+      utils.message.getGroupMessages.invalidate({
+        groupId: Number(props.info?.group.id),
+      });
     },
   });
 

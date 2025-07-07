@@ -8,7 +8,13 @@ import z from "zod";
 
 export const messageRouter = createTRPCRouter({
   createMessage: protectedProcedure
-    .input(DB_MessageType_Zod_Create)
+    .input(
+      DB_MessageType_Zod_Create.omit({
+        eventType: true,
+        userId: true,
+        habitId: true,
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user.username) return null;
 
