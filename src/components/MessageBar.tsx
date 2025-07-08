@@ -45,12 +45,15 @@ export function MessageBar(props: MessageBarProps) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    createMessage.mutate({
-      ...values,
-      type: "message",
-      groupId: Number(props.info?.group.id),
-    });
+    if (values.contents.length > 0)
+      createMessage.mutate({
+        ...values,
+        type: "message",
+        groupId: Number(props.info?.group.id),
+      });
   }
+
+  const message = form.watch("contents");
 
   return (
     <Form {...form}>
@@ -70,7 +73,11 @@ export function MessageBar(props: MessageBarProps) {
                     placeholder="Type to send a message"
                     className="h-10"
                   />
-                  <Button type="submit" className="h-10 w-14">
+                  <Button
+                    disabled={createMessage.isPending || message.length === 0}
+                    type="submit"
+                    className="h-10 w-14"
+                  >
                     <SendHorizontal />
                   </Button>
                 </div>

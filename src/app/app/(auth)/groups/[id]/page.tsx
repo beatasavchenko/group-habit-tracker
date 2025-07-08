@@ -13,30 +13,14 @@ import { useGroupRedirect } from "~/app/hooks/useGroupRedirect";
 import { CreateTabs } from "~/components/CreateTabs";
 import { Header } from "~/components/Header";
 import PageLayout from "~/components/PageLayout";
-import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "~/components/ui/form";
-import { Input } from "~/components/ui/input";
 import { ModeToggle } from "~/components/ui/mode-toggle";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { DB_HabitType_Zod_Create } from "~/lib/types";
+import {
+  DB_HabitType_Zod_Create,
+  DB_UserHabitType_Zod_Create,
+} from "~/lib/types";
 import { api } from "~/trpc/react";
 import { HexColorPicker } from "react-colorful";
 import {
@@ -50,66 +34,29 @@ import { MessageBar } from "~/components/MessageBar";
 import { useSession } from "next-auth/react";
 import { parseMentionsAndHabits } from "~/lib/utils";
 import dayjs from "dayjs";
-
-const colors = [
-  "#54478c",
-  "#2c699a",
-  "#048ba8",
-  "#0db39e",
-  "#16db93",
-  "#83e377",
-  "#b9e769",
-  "#efea5a",
-  "#f1c453",
-  "#f29e4c",
-];
-
-export const formSchema = DB_HabitType_Zod_Create.omit({ groupId: true });
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Card, CardContent } from "~/components/ui/card";
+import { Label } from "~/components/ui/label";
+import JoinHabitDialog from "~/components/dialogs/JoinHabitDialog";
+import AddHabitDialog from "~/components/dialogs/AddHabitDialog";
 
 export default function GroupPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      color: colors[0] as string,
-      frequency: "day",
-    },
-    mode: "onChange",
-  });
-
   const { group: groupData } = useGroupRedirect(params.id);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  const utils = api.useUtils();
-
-  const createHabit = api.habit.createHabit.useMutation({
-    onMutate: () => {
-      toast.loading("Creating habit...");
-    },
-    onSuccess: (data) => {
-      toast.dismiss();
-      toast.success("Habit created successfully!");
-      utils.message.getGroupMessages.invalidate({
-        groupId: Number(groupData?.group.id),
-      });
-      setDialogOpen(false);
-    },
-    onError: (error) => {
-      toast.dismiss();
-      toast.error("Error creating habit.");
-    },
-  });
-
-  const selectedColor = form.watch("color");
-  const frequency = form.watch("frequency");
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    createHabit.mutate({ ...values, groupId: Number(groupData?.group.id) });
-  }
+  // useEffect(() => {
+  //   if (habitId && habitDetails.data) {
+  //     joinForm.setValue("goal", habitDetails.data?.goal);
+  //   }
+  // }, [habitId, habitDetails.data]);
 
   const messages = api.message.getGroupMessages.useQuery(
     {
@@ -126,7 +73,7 @@ export default function GroupPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.data?.length]);
+  }, [messages.data]);
 
   return (
     <div className="static flex h-screen w-full flex-col">
@@ -135,128 +82,13 @@ export default function GroupPage() {
         name={groupData?.group?.name ?? "My Group"}
         button={
           <div className="ml-auto">
-            <Dialog
-              open={dialogOpen}
-              onOpenChange={() => setDialogOpen(!dialogOpen)}
-            >
-              <DialogTrigger asChild>
-                <Button className="px-4">Add a habit</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Create a habit</DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                  <form
-                    className="space-y-6 text-right"
-                    onSubmit={form.handleSubmit(onSubmit)}
-                  >
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              className="w-96"
-                              placeholder="Drink water"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage className="text-left" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="color"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Color</FormLabel>
-                          <FormControl>
-                            <div className="flex flex-wrap items-center gap-2">
-                              {colors.map((color) => (
-                                <div
-                                  onClick={() => form.setValue("color", color)}
-                                  key={color}
-                                  style={{
-                                    backgroundColor: color,
-                                  }}
-                                  className={`flex h-8 w-8 items-center justify-center rounded-full hover:cursor-pointer ${selectedColor === color ? "border-2 border-black dark:border-white" : "border-0"}`}
-                                >
-                                  <Check
-                                    className={`${selectedColor === color ? "flex" : "hidden"}`}
-                                  />
-                                </div>
-                              ))}
-                              <Popover>
-                                <PopoverTrigger>
-                                  {colors.includes(selectedColor) ? (
-                                    <Palette size={32} />
-                                  ) : (
-                                    <div
-                                      style={{
-                                        backgroundColor: selectedColor,
-                                      }}
-                                      className="h-8 w-8 rounded-full border-2 border-black hover:cursor-pointer dark:border-white"
-                                    />
-                                  )}
-                                </PopoverTrigger>
-                                <PopoverContent>
-                                  <HexColorPicker
-                                    color={selectedColor}
-                                    onChange={(value) =>
-                                      form.setValue("color", value)
-                                    }
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-left" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="frequency"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Frequency</FormLabel>
-                          <FormControl>
-                            <Tabs
-                              value={frequency}
-                              onValueChange={(value: string) =>
-                                form.setValue(
-                                  "frequency",
-                                  value as "day" | "week" | "month",
-                                )
-                              }
-                            >
-                              <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="day">Daily</TabsTrigger>
-                                <TabsTrigger value="week">Weekly</TabsTrigger>
-                                <TabsTrigger value="month">Monthly</TabsTrigger>
-                              </TabsList>
-                            </Tabs>
-                          </FormControl>
-                          <FormMessage className="text-left" />
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <Button type="submit">Create</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+            <AddHabitDialog groupData={groupData ?? null} />
           </div>
         }
       />
       <ScrollArea className="h-[calc(100vh-40px)] w-full overflow-y-auto px-8 py-4">
-        <div className="flex w-full flex-col gap-5">
+        <div className="flex h-full flex-col-reverse justify-end gap-5">
+          <div ref={bottomRef} />
           {messages.data?.map((message) => {
             const isOwnMessage = message.userId === userId;
             const isEventMessage = message.type === "event";
@@ -272,34 +104,38 @@ export default function GroupPage() {
                       : "justify-start"
                 }`}
               >
-                <div className="w-[30vw] rounded-xl bg-gray-400 px-6 py-3">
-                  <div
-                    className={`${
-                      isEventMessage
-                        ? "text-center"
-                        : isOwnMessage
-                          ? "text-right"
-                          : "text-left"
-                    }`}
-                  >
-                    {parseMentionsAndHabits(
-                      message.contents,
-                      message.habitId ?? undefined,
+                <Card className="border-gray-200">
+                  <CardContent className="w-[30vw] rounded-xl px-6 py-3">
+                    <div
+                      className={`${
+                        isEventMessage
+                          ? "text-center"
+                          : isOwnMessage
+                            ? "text-right"
+                            : "text-left"
+                      }`}
+                    >
+                      {parseMentionsAndHabits(
+                        message.contents,
+                        message.habitId ?? undefined,
+                      )}
+                    </div>
+
+                    {isEventMessage &&
+                      message.eventType === "habit_created" && (
+                        <JoinHabitDialog
+                          groupData={groupData ?? null}
+                          message={message}
+                        />
+                      )}
+
+                    {!isEventMessage && (
+                      <div className="text-muted-foreground mt-2 flex justify-end text-sm">
+                        {dayjs(message.createdAt).format("MMM D, YYYY HH:mm")}
+                      </div>
                     )}
-                  </div>
-
-                  {isEventMessage && message.eventType === "habit_created" && (
-                    <div className="mt-2 flex justify-end">
-                      <Button className="w-fit">Join</Button>
-                    </div>
-                  )}
-
-                  {!isEventMessage && (
-                    <div className="text-muted-foreground mt-2 flex justify-end text-sm">
-                      {dayjs(message.createdAt).format("MMM D, YYYY HH:mm")}
-                    </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             );
           })}

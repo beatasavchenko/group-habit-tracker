@@ -1,4 +1,8 @@
-import { DB_HabitType_Zod_Create, Partial_DB_GroupType_Zod } from "~/lib/types";
+import {
+  DB_HabitType_Zod_Create,
+  DB_UserHabitType_Zod_Create,
+  Partial_DB_GroupType_Zod,
+} from "~/lib/types";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -13,7 +17,11 @@ import {
   getGroupsForUser,
   updateGroup,
 } from "~/server/services/groupService";
-import { createHabit } from "~/server/services/habitService";
+import {
+  createHabit,
+  getHabitById,
+  joinHabit,
+} from "~/server/services/habitService";
 import z from "zod";
 
 export const habitRouter = createTRPCRouter({
@@ -24,69 +32,18 @@ export const habitRouter = createTRPCRouter({
       const res = await createHabit(input, ctx.session.user.id);
       return res ?? null;
     }),
-  getGroupsForUser: protectedProcedure.query(async ({ ctx, input }) => {
-    const res = await getGroupsForUser(ctx.userId);
-    return res ?? [];
-  }),
-  getGroupById: protectedProcedure
-    .input(z.object({ groupId: z.number() }))
-    .query(async ({ ctx, input }) => {
-      if (!input) return null;
-      const res = await getGroupById(input.groupId);
-      return res ?? null;
-    }),
-  getGroupByUsername: protectedProcedure
-    .input(z.object({ groupUsername: z.string() }))
-    .query(async ({ ctx, input }) => {
-      if (!input) return null;
-      const res = await getGroupByUsername(input.groupUsername);
-      return res ?? null;
-    }),
-  updateGroup: protectedProcedure
-    .input(Partial_DB_GroupType_Zod)
-    .mutation(async ({ ctx, input }) => {
-      const res = await updateGroup(input.id, { ...input });
-      return res ?? null;
-    }),
-  addGroupMembers: protectedProcedure
-    .input(
-      z.object({
-        groupId: z.number(),
-        groupUsername: z.string(),
-        members: z.array(
-          z.object({
-            usernameOrEmail: z.string(),
-            role: z.enum(["admin", "member"]),
-          }),
-        ),
-      }),
-    )
+  joinHabit: protectedProcedure
+    .input(DB_UserHabitType_Zod_Create.omit({ userId: true }))
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user.username) return null;
-      const res = await addGroupMembers(
-        ctx.userId,
-        input.groupId,
-        input.groupUsername,
-        [
-          ...(input.members ?? []),
-          {
-            usernameOrEmail: ctx.session?.user.username,
-            role: "member" as const,
-          },
-        ],
-      );
+      const res = await joinHabit({ ...input, userId: ctx.session.user.id });
       return res ?? null;
     }),
-  deleteGroupMember: protectedProcedure
-    .input(
-      z.object({
-        groupId: z.number(),
-        groupMemberId: z.number(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.session?.user.username) return null;
-      const res = await deleteGroupMember(input.groupId, input.groupMemberId);
+  getHabitById: protectedProcedure
+    .input(z.object({ habitId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!input) return null;
+      const res = await getHabitById(input.habitId);
       return res ?? null;
     }),
 });

@@ -140,8 +140,8 @@ export const habits = createTable(
     name: text("name").notNull(),
     description: text("description"),
     color: text("color").default("#54478c").notNull(),
-    goal: bigint("goal", { mode: "number", unsigned: true }),
-    unit: text("unit"),
+    goal: bigint("goal", { mode: "number", unsigned: true }).notNull(),
+    unit: text("unit").notNull(),
     frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
     groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
     createdAt: timestamp().defaultNow().notNull(),
@@ -151,19 +151,23 @@ export const habits = createTable(
 );
 export type DB_HabitType = typeof habits.$inferSelect;
 
-export const personalHabit = createTable("personalHabits", {
-  id: bigint("id", { mode: "number", unsigned: true })
-    .primaryKey()
-    .autoincrement(),
-  habitId: bigint("habitId", { mode: "number", unsigned: true }),
-  userId: bigint("userId", { mode: "number", unsigned: true }),
-  groupId: bigint("groupId", { mode: "number", unsigned: true }),
-  personalGoal: text("personalGoal").$type<string>(),
-  basicGoal: text("basicGoal").$type<string>(),
-  isCompleted: boolean().notNull().default(false),
-  createdAt: timestamp().defaultNow().notNull(),
-  updatedAt: timestamp().$onUpdate(() => new Date()),
-});
+export const userHabits = createTable(
+  "user_habits",
+  {
+    id: bigint("id", { mode: "number", unsigned: true })
+      .primaryKey()
+      .autoincrement(),
+    habitId: bigint("habitId", { mode: "number", unsigned: true }).notNull(),
+    userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
+    goal: bigint("goal", { mode: "number", unsigned: true }).notNull(),
+    frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
+    joinedAt: timestamp().defaultNow().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().$onUpdate(() => new Date()),
+  },
+  (t) => [primaryKey({ columns: [t.id] })],
+);
+export type DB_UserHabitType = typeof userHabits.$inferSelect;
 
 export const messages = createTable(
   "messages",
