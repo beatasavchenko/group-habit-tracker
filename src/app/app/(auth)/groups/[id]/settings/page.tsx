@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, EllipsisVertical, Upload, UserPlus } from "lucide-react";
+import {
+  ArrowLeft,
+  EllipsisVertical,
+  Pencil,
+  Trash2,
+  Upload,
+  UserPlus,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type SetStateAction } from "react";
@@ -27,12 +34,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import GroupInfoForm from "~/components/settings/forms/info/GroupInfoForm";
 import { Button } from "~/components/ui/button";
+import DeleteGroupDialog from "~/components/settings/dialogs/info/DeleteGroupDialog";
+import LeaveGroupDialog from "~/components/settings/dialogs/info/LeaveGroupDialog";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export default function Settings() {
   const params = useParams<{ id: string }>();
   const groupUsername = params.id;
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteGroupDialogOpen, setDeleteGroupDialogOpen] = useState(false);
+  const [leaveGroupDialogOpen, setLeaveGroupDialogOpen] = useState(false);
   const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false);
 
   const [memberIdToDelete, setMemberIdToDelete] = useState<number | null>(null);
@@ -64,6 +76,19 @@ export default function Settings() {
 
   const isUpdating = isLoading || updateGroup.isPending;
 
+  const { data: userData } = useSession();
+
+  const isUserOwner =
+    groupData?.groupMembers.find((member) => member.role === "owner")
+      ?.userId === userData?.user.id;
+
+  const habits = api.habit.getGroupHabits.useQuery(
+    {
+      groupId: Number(groupData?.group.id),
+    },
+    { enabled: !!groupData },
+  );
+
   return (
     <div className="m-10 flex w-full flex-col items-center justify-center">
       <div className="flex w-[80vw] flex-col px-16">
@@ -75,7 +100,33 @@ export default function Settings() {
             />
             <h1 className="truncate text-4xl font-bold">Group Settings</h1>
           </div>
-          <EllipsisVertical className="items-end" />
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              {groupData && <EllipsisVertical className="items-end" />}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <>
+                {(groupData?.groupMembers?.length ?? 0) > 1 && (
+                  <DropdownMenuItem
+                    onClick={() => setLeaveGroupDialogOpen(true)}
+                    className="text-red-500"
+                  >
+                    Leave group
+                  </DropdownMenuItem>
+                )}
+                {isUserOwner && (
+                  <DropdownMenuItem
+                    onClick={() => setDeleteGroupDialogOpen(true)}
+                    className="text-red-500"
+                  >
+                    {(groupData?.groupMembers?.length ?? 0) === 1
+                      ? "Delete and leave group"
+                      : "Delete"}
+                  </DropdownMenuItem>
+                )}
+              </>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex w-full items-center gap-6">
@@ -130,13 +181,7 @@ export default function Settings() {
         </div>
 
         <Separator className="bg-sidebar-border my-12 w-full" />
-        <Tabs
-          defaultValue="info"
-          // value={frequency}
-          // onValueChange={(value: string) =>
-          //   form.setValue("frequency", value as "day" | "week" | "month")
-          // }
-        >
+        <Tabs defaultValue="info">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
@@ -144,16 +189,7 @@ export default function Settings() {
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
           <TabsContent value="info">
-            {groupData && (
-              <div>
-                <GroupInfoForm groupData={groupData} />
-                <h1 className="my-6 text-2xl font-bold text-red-500">
-                  Danger Zone
-                </h1>
-                <Button variant={"destructive"}>Delete Group</Button>
-                <Button variant={"destructive"}>Leave Group</Button>
-              </div>
-            )}
+            {groupData && <GroupInfoForm groupData={groupData} />}
           </TabsContent>
           <TabsContent value="members">
             <div className="my-6 flex items-center justify-between">
@@ -213,22 +249,63 @@ export default function Settings() {
               ))}
             </div>
           </TabsContent>
+          <TabsContent value="habits">
+            <div className="my-6 flex items-center justify-between">
+              <h1 className="text-2xl font-bold">Habits</h1>
+            </div>
+            {habits.data?.map((habit) => (
+              <Card
+                key={habit.id}
+                className="flex items-center justify-between gap-4"
+              >
+                <CardContent className="flex">
+                  <div className="flex">
+                    <div
+                      className="h-16 w-16 rounded-full"
+                      style={{ backgroundColor: habit.color }}
+                    />
+                    <div>{habit.name}</div>
+                  </div>
+                  <div className="flex">
+                    <Pencil />
+                    <Trash2 className="text-red-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
         </Tabs>
       </div>
-      <DeleteMemberDialog
-        groupUsername={groupUsername}
-        groupData={groupData ?? null}
-        dialogOpen={deleteMemberDialogOpen}
-        setDialogOpen={setDeleteMemberDialogOpen}
-        memberIdToDelete={memberIdToDelete}
-        setMemberIdToDelete={setMemberIdToDelete}
-      />
-      <AddGroupMembersDialog
-        groupData={groupData ?? null}
-        groupUsername={groupUsername}
-        dialogOpen={dialogOpen}
-        setDialogOpen={setDialogOpen}
-      />
+      {groupData && (
+        <>
+          <DeleteGroupDialog
+            groupId={groupData?.group.id}
+            dialogOpen={deleteGroupDialogOpen}
+            setDialogOpen={() =>
+              setDeleteGroupDialogOpen(!deleteGroupDialogOpen)
+            }
+          />
+          <LeaveGroupDialog
+            groupId={groupData?.group.id}
+            dialogOpen={leaveGroupDialogOpen}
+            setDialogOpen={() => setLeaveGroupDialogOpen(!leaveGroupDialogOpen)}
+          />
+          <DeleteMemberDialog
+            groupUsername={groupUsername}
+            groupData={groupData}
+            dialogOpen={deleteMemberDialogOpen}
+            setDialogOpen={setDeleteMemberDialogOpen}
+            memberIdToDelete={memberIdToDelete}
+            setMemberIdToDelete={setMemberIdToDelete}
+          />
+          <AddGroupMembersDialog
+            groupData={groupData}
+            groupUsername={groupUsername}
+            dialogOpen={dialogOpen}
+            setDialogOpen={setDialogOpen}
+          />
+        </>
+      )}
     </div>
   );
 }

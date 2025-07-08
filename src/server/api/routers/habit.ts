@@ -19,6 +19,7 @@ import {
 } from "~/server/services/groupService";
 import {
   createHabit,
+  getGroupHabits,
   getHabitById,
   joinHabit,
 } from "~/server/services/habitService";
@@ -44,6 +45,13 @@ export const habitRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       if (!input) return null;
       const res = await getHabitById(input.habitId);
+      return res ?? null;
+    }),
+  getGroupHabits: protectedProcedure
+    .input(z.object({ groupId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!input) return null;
+      const res = await getGroupHabits(input.groupId);
       return res ?? null;
     }),
 });

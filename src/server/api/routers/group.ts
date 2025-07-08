@@ -10,6 +10,7 @@ import {
   addGroupMembers,
   checkGroupUsernameAvailability,
   createGroup,
+  deleteGroup,
   deleteGroupMember,
   getGroupById,
   getGroupByUsername,
@@ -101,6 +102,28 @@ export const groupRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user.username) return null;
       const res = await deleteGroupMember(input.groupId, input.groupMemberId);
+      return res ?? null;
+    }),
+  leaveGroup: protectedProcedure
+    .input(
+      z.object({
+        groupId: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user.username) return null;
+      const res = await deleteGroupMember(input.groupId, ctx.session?.user.id);
+      return res ?? null;
+    }),
+  deleteGroup: protectedProcedure
+    .input(
+      z.object({
+        groupId: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user.username) return null;
+      const res = await deleteGroup(input.groupId, ctx.session.user.id);
       return res ?? null;
     }),
 });

@@ -60,7 +60,7 @@ import { signOut, useSession } from "next-auth/react";
 import { redirect } from "next/dist/server/api-utils";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export const communitySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -166,6 +166,10 @@ export function AppSidebar() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const utils = api.useUtils();
+
+  const params = useParams<{ id: string }>();
+
   const createGroup = api.group.createGroup.useMutation({
     onMutate: () => {
       toast.loading("Creating group...");
@@ -175,6 +179,7 @@ export function AppSidebar() {
       toast.success("Group created successfully!");
       setDialogOpen(false);
       router.push(`/app/groups/${data?.groups.groupUsername}`);
+      utils.group.getGroupsForUser.invalidate();
     },
     onError: (error) => {
       toast.dismiss();
@@ -246,7 +251,7 @@ export function AppSidebar() {
                     <Input />
                   </Label>
                 </PopoverTrigger>
-                <PopoverContent className="flex w-sm flex-col gap-4 border-0 p-0 py-4 popover-content-width-full">
+                <PopoverContent className="popover-content-width-full flex w-sm flex-col gap-4 border-0 p-0 py-4">
                   {allCommunities
                     .filter((community) =>
                       community.name
@@ -269,7 +274,8 @@ export function AppSidebar() {
                     <SidebarMenuItem key={group.id}>
                       <SidebarMenuButton asChild>
                         <a
-                          href={`${process.env.NEXT_PUBLIC_BASE_URL}/app/groups/${group.groupUsername}`}
+                          className={`py-4 ${group.groupUsername === params.id && "bg-accent"}`}
+                          href={`${process.env.NEXT_PUBLIC_BASE_URL}app/groups/${group.groupUsername}`}
                         >
                           <Avatar className="h-8 w-8 rounded-full">
                             <AvatarImage

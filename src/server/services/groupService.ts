@@ -23,6 +23,7 @@ import z from "zod";
 import {
   groupMembers,
   groups,
+  habits,
   users,
   type DB_GroupMemberType,
   type DB_GroupType,
@@ -229,6 +230,10 @@ export async function deleteGroupMember(
       ),
     );
 
+  const group = await db.select().from(groups).where(eq(groups.id, groupId));
+
+  if (group.length === 0) await deleteGroup(groupId, groupMemberId);
+
   return groupMemberToDelete[0].insertId;
 }
 
@@ -241,4 +246,15 @@ export async function checkGroupUsernameAvailability(username: string) {
   const isUsernameAvailable = groupIds.length === 0;
 
   return isUsernameAvailable;
+}
+
+export async function deleteGroup(groupId: number, userId: number) {
+  const groupMemberToDelete = await db
+    .delete(groups)
+    .where(eq(groups.id, groupId));
+
+  await db.delete(groupMembers).where(eq(groupMembers.groupId, groupId));
+  await db.delete(habits).where(eq(habits.groupId, groupId));
+
+  return groupMemberToDelete[0].insertId;
 }

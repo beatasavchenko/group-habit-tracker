@@ -75,3 +75,12 @@ export async function joinHabit(habitToCreate: DB_UserHabitType_Create) {
 
   return await getHabitById(habit[0]?.id);
 }
+
+export async function getGroupHabits(id: number) {
+  const foundGroups = await db
+    .select()
+    .from(habits)
+    .where(eq(habits.groupId, id));
+
+  return foundGroups ?? [];
+}
