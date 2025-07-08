@@ -37,11 +37,11 @@ export const DB_UserType_Zod = z.object({
 
 export const DB_GroupType_Zod = z.object({
   id: z.number().int().nonnegative(),
-  group_username: z.string().min(1),
+  groupUsername: z.string().min(1),
+  description: z.string().optional(),
   name: z.string(),
+  inviteCode: z.string(),
   image: z.string().optional().nullable(),
-  groupMembers: z.array(z.string()).optional().nullable(),
-  habits: z.array(z.number()).optional().nullable(),
   createdAt: z.date(),
   updatedAt: z.date().optional().nullable(),
 });

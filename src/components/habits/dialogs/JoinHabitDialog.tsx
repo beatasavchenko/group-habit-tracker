@@ -6,10 +6,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog";
-import { Label } from "../ui/label";
-import { Select, SelectTrigger, SelectValue } from "../ui/select";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+} from "../../ui/dialog";
+import { Label } from "../../ui/label";
+import { Select, SelectTrigger, SelectValue } from "../../ui/select";
+import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import {
   Form,
   FormControl,
@@ -17,15 +17,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Button } from "../ui/button";
+} from "../../ui/form";
+import { Button } from "../../ui/button";
 import { DB_UserHabitType_Zod_Create } from "~/lib/types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type z from "zod";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import { Input } from "../ui/input";
+import { Input } from "../../ui/input";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
 

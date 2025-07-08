@@ -27,16 +27,16 @@ import { Input } from "~/components/ui/input";
 import { DB_HabitType_Zod_Create } from "~/lib/types";
 import type { AppRouter } from "~/server/api/root";
 import { api } from "~/trpc/react";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { HexColorPicker } from "react-colorful";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from "../../ui/select";
 
 const colors = [
   "#54478c",

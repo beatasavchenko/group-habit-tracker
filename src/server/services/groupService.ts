@@ -30,6 +30,7 @@ import {
 } from "../db/schema";
 import { db } from "../db";
 import { and, eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export async function getGroupById(id: number) {
   const group = await db
@@ -92,6 +93,9 @@ export async function createGroup(groupToCreate: {
   if (!name) {
     return null;
   }
+
+  const inviteCode = nanoid(6);
+
   const numberDictionary = NumberDictionary.generate({
     min: 10000,
     max: 99999,
@@ -109,6 +113,7 @@ export async function createGroup(groupToCreate: {
       ...groupToCreate,
       name,
       groupUsername,
+      inviteCode,
     })
     .$returningId();
 
@@ -118,9 +123,10 @@ export async function createGroup(groupToCreate: {
     await db
       .insert(groupMembers)
       .values({
-        groupId: group[0]?.id,
+        groupId: Number(group[0]?.id),
         userId: user.id,
         role: user.id === groupToCreate.userId ? "owner" : "member",
+        status: user.id === groupToCreate.userId ? "active" : "pending",
       })
       .$returningId();
   });
@@ -202,6 +208,7 @@ export async function addGroupMembers(
         groupId: groupId,
         userId: member.id,
         role: member.role,
+        status: "pending",
       })
       .onDuplicateKeyUpdate({ set: { role: member.role } });
   }
@@ -223,4 +230,15 @@ export async function deleteGroupMember(
     );
 
   return groupMemberToDelete[0].insertId;
+}
+
+export async function checkGroupUsernameAvailability(username: string) {
+  const groupIds = await db
+    .select({ id: groups.id })
+    .from(groups)
+    .where(eq(groups.groupUsername, username));
+
+  const isUsernameAvailable = groupIds.length === 0;
+
+  return isUsernameAvailable;
 }

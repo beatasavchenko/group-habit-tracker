@@ -8,6 +8,7 @@ import {
 } from "~/server/api/trpc";
 import {
   addGroupMembers,
+  checkGroupUsernameAvailability,
   createGroup,
   deleteGroupMember,
   getGroupById,
@@ -40,6 +41,13 @@ export const groupRouter = createTRPCRouter({
       if (!input) return null;
       const res = await getGroupById(input.groupId);
       return res ?? null;
+    }),
+  checkGroupUsernameAvailability: protectedProcedure
+    .input(z.object({ groupUsername: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!input) return null;
+      const res = await checkGroupUsernameAvailability(input.groupUsername);
+      return res ?? false;
     }),
   getGroupByUsername: protectedProcedure
     .input(z.object({ groupUsername: z.string() }))

@@ -43,8 +43,8 @@ import {
 } from "~/components/ui/select";
 import { Card, CardContent } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
-import JoinHabitDialog from "~/components/dialogs/JoinHabitDialog";
-import AddHabitDialog from "~/components/dialogs/AddHabitDialog";
+import JoinHabitDialog from "~/components/habits/dialogs/JoinHabitDialog";
+import AddHabitDialog from "~/components/habits/dialogs/AddHabitDialog";
 
 export default function GroupPage() {
   const params = useParams<{ id: string }>();

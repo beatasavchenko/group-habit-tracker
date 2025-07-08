@@ -31,7 +31,8 @@ export const users = createTable(
   {
     id: bigint("id", { mode: "number", unsigned: true })
       .primaryKey()
-      .autoincrement(),
+      .autoincrement()
+      .notNull(),
     username: text("username").notNull(),
     name: text("name"),
     image: text("image"),
@@ -39,7 +40,6 @@ export const users = createTable(
     code: text("code"),
     codeExpiresAt: timestamp("codeExpiresAt").defaultNow(),
     isVerified: boolean().notNull().default(false),
-    friends: text("friends").$type<number[]>(),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp().$onUpdate(() => new Date()),
   },
@@ -73,11 +73,13 @@ export const groups = createTable(
   {
     id: bigint("id", { mode: "number", unsigned: true })
       .primaryKey()
-      .autoincrement(),
+      .autoincrement()
+      .notNull(),
     name: text("name").notNull(),
     groupUsername: text("group_username").notNull(),
+    description: text("description"),
+    inviteCode: text("invite_code").notNull(),
     image: text("image"),
-    habits: text("habits").$type<number[]>(),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp().$onUpdate(() => new Date()),
   },
@@ -85,6 +87,7 @@ export const groups = createTable(
     return [
       index("group_username_idx").on(t.groupUsername),
       sql`UNIQUE KEY groups_username_unique (group_username)`,
+      sql`UNIQUE KEY groups_invite_code_unique (invite_code)`,
     ];
   },
 );
@@ -98,11 +101,16 @@ export const groupsRelations = relations(groups, ({ many }) => ({
 export const groupMembers = createTable(
   "group_members",
   {
-    groupId: bigint("group_id", { mode: "number", unsigned: true }),
-    userId: bigint("user_id", { mode: "number", unsigned: true }),
+    groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
+    userId: bigint("user_id", { mode: "number", unsigned: true }).notNull(),
     role: text("role")
       .default("member")
-      .$type<"owner" | "member" | "admin" | "pending">(),
+      .$type<"owner" | "member" | "admin">()
+      .notNull(),
+    status: text("status")
+      .default("pending")
+      .$type<"pending" | "active">()
+      .notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.groupId] })],
 );
@@ -136,7 +144,8 @@ export const habits = createTable(
   {
     id: bigint("id", { mode: "number", unsigned: true })
       .primaryKey()
-      .autoincrement(),
+      .autoincrement()
+      .notNull(),
     name: text("name").notNull(),
     description: text("description"),
     color: text("color").default("#54478c").notNull(),
