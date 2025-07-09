@@ -101,3 +101,11 @@ export const DB_MessageType_Zod_Create = z.object({
 });
 
 export type DB_MessageType_Create = z.infer<typeof DB_MessageType_Zod_Create>;
+
+export const DB_UserHabitLogType_Zod_Create = z.object({
+  userHabitId: z.number(),
+});
+
+export type DB_UserHabitLogType_Zod_Create = z.infer<
+  typeof DB_UserHabitLogType_Zod_Create
+>;

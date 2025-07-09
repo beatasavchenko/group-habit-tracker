@@ -1,9 +1,14 @@
-import type { DB_HabitType_Create, DB_UserHabitType_Create } from "~/lib/types";
-import { habits, userHabits } from "../db/schema";
+import type {
+  DB_HabitType_Create,
+  DB_UserHabitType_Create,
+  DB_UserHabitLogType_Zod_Create,
+} from "~/lib/types";
+import { habitLogs, habits, userHabits } from "../db/schema";
 import { db } from "../db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { createMessage } from "./messageService";
 import { getUserById } from "./userService";
+import dayjs from "dayjs";
 
 export async function getHabitById(id: number) {
   const habit = await db.selectDistinct().from(habits).where(eq(habits.id, id));
@@ -83,4 +88,52 @@ export async function getGroupHabits(id: number) {
     .where(eq(habits.groupId, id));
 
   return foundGroups ?? [];
+}
+
+export async function getUserHabits(id: number) {
+  const habitId = await db
+    .selectDistinct()
+    .from(userHabits)
+    .where(eq(userHabits.id, id));
+
+  if (!habitId[0]?.habitId) return null;
+
+  const rows = await db
+    .select({
+      userHabit: userHabits,
+      habit: habits,
+      habitLog: habitLogs,
+    })
+    .from(userHabits)
+    .innerJoin(habits, eq(habits.id, habitId[0]?.habitId))
+    .innerJoin(habitLogs, eq(habitLogs.userHabitId, id))
+    .where(eq(userHabits.id, id));
+
+  return rows ?? [];
+}
+
+export async function logHabit(habitDetails: DB_UserHabitLogType_Zod_Create) {
+  const prevValue = await db
+    .select({ value: habitLogs.value })
+    .from(habitLogs)
+    .where(
+      and(
+        eq(habitLogs.userHabitId, habitDetails.userHabitId),
+        eq(habitLogs.date, dayjs().toDate()),
+      ),
+    );
+
+  if (!prevValue?.[0]) return null;
+
+  const habitLog = await db
+    .insert(habitLogs)
+    .values({
+      ...habitDetails,
+      value: prevValue[0].value++,
+    })
+    .$returningId();
+
+  if (!habitLog[0]) return null;
+
+  return habitLog[0];
 }

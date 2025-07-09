@@ -127,6 +127,13 @@
       "when": 1751969812674,
       "tag": "0017_slim_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "1",
+      "when": 1752059648364,
+      "tag": "0018_classy_nova",
+      "breakpoints": true
     }
   ]
 }

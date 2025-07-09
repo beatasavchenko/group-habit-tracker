@@ -39,9 +39,9 @@ export const users = createTable(
     email: text("email").notNull(),
     code: text("code"),
     codeExpiresAt: timestamp("codeExpiresAt").defaultNow(),
-    isVerified: boolean().notNull().default(false),
-    createdAt: timestamp().defaultNow().notNull(),
-    updatedAt: timestamp().$onUpdate(() => new Date()),
+    isVerified: boolean("is_verified").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
   (t) => {
     return [
@@ -80,8 +80,8 @@ export const groups = createTable(
     description: text("description"),
     inviteCode: text("invite_code").notNull(),
     image: text("image"),
-    createdAt: timestamp().defaultNow().notNull(),
-    updatedAt: timestamp().$onUpdate(() => new Date()),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
   (t) => {
     return [
@@ -111,6 +111,8 @@ export const groupMembers = createTable(
       .default("pending")
       .$type<"pending" | "active">()
       .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
   (t) => [primaryKey({ columns: [t.userId, t.groupId] })],
 );
@@ -153,8 +155,8 @@ export const habits = createTable(
     unit: text("unit").notNull(),
     frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
     groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
-    createdAt: timestamp().defaultNow().notNull(),
-    updatedAt: timestamp().$onUpdate(() => new Date()),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
   (t) => [primaryKey({ columns: [t.groupId] })],
 );
@@ -166,17 +168,32 @@ export const userHabits = createTable(
     id: bigint("id", { mode: "number", unsigned: true })
       .primaryKey()
       .autoincrement(),
-    habitId: bigint("habitId", { mode: "number", unsigned: true }).notNull(),
-    userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
+    habitId: bigint("habit_id", { mode: "number", unsigned: true }).notNull(),
+    userId: bigint("user_id", { mode: "number", unsigned: true }).notNull(),
     goal: bigint("goal", { mode: "number", unsigned: true }).notNull(),
     frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
     joinedAt: timestamp().defaultNow().notNull(),
-    createdAt: timestamp().defaultNow().notNull(),
-    updatedAt: timestamp().$onUpdate(() => new Date()),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
   (t) => [primaryKey({ columns: [t.id] })],
 );
 export type DB_UserHabitType = typeof userHabits.$inferSelect;
+
+export const habitLogs = createTable("habit_logs", {
+  id: bigint("id", { mode: "number", unsigned: true })
+    .primaryKey()
+    .autoincrement(),
+  userHabitId: bigint("user_habit_id", {
+    mode: "number",
+    unsigned: true,
+  }).notNull(),
+  date: timestamp().defaultNow().notNull(),
+  value: bigint("value", { mode: "number", unsigned: true }).notNull(),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
+});
 
 export const messages = createTable(
   "messages",
@@ -190,8 +207,8 @@ export const messages = createTable(
     groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
     userId: bigint("user_id", { mode: "number", unsigned: true }).notNull(),
     habitId: bigint("habit_id", { mode: "number", unsigned: true }),
-    createdAt: timestamp().defaultNow().notNull(),
-    updatedAt: timestamp().$onUpdate(() => new Date()),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
   (t) => [primaryKey({ columns: [t.id] })],
 );

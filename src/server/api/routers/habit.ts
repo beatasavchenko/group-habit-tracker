@@ -1,5 +1,6 @@
 import {
   DB_HabitType_Zod_Create,
+  DB_UserHabitLogType_Zod_Create,
   DB_UserHabitType_Zod_Create,
   Partial_DB_GroupType_Zod,
 } from "~/lib/types";
@@ -21,7 +22,9 @@ import {
   createHabit,
   getGroupHabits,
   getHabitById,
+  getUserHabits,
   joinHabit,
+  logHabit,
 } from "~/server/services/habitService";
 import z from "zod";
 
@@ -52,6 +55,18 @@ export const habitRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       if (!input) return null;
       const res = await getGroupHabits(input.groupId);
+      return res ?? null;
+    }),
+  getUserHabits: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.session?.user.id) return null;
+    const res = await getUserHabits(ctx.session?.user.id);
+    return res ?? null;
+  }),
+  logHabit: protectedProcedure
+    .input(DB_UserHabitLogType_Zod_Create)
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session?.user.username) return null;
+      const res = await logHabit(input);
       return res ?? null;
     }),
 });

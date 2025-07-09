@@ -25,7 +25,7 @@ export async function createMessage(messageToCreate: DB_MessageType_Create) {
     console.log("error", error);
   }
 
-  if (!message || !message[0]) return null;
+  if (!message?.[0]) return null;
   return await getMessageById(message[0]?.id);
 }
 

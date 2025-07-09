@@ -2,6 +2,7 @@
 
 import {
   Calendar,
+  CalendarCheck2,
   Check,
   ChevronsUpDown,
   Command,
@@ -267,6 +268,14 @@ export function AppSidebar() {
                     ))}
                 </PopoverContent>
               </Popover>
+              <SidebarMenuItem key={"overview"}>
+                <SidebarMenuButton asChild>
+                  <Link href={"/app/overview"}>
+                    <CalendarCheck2 />
+                    <span>Habit overview</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {groups && groups.length > 0 && (
                 <>
                   <SidebarGroupLabel>Groups</SidebarGroupLabel>
@@ -317,14 +326,6 @@ export function AppSidebar() {
                 </>
               )} */}
               <Separator className="bg-sidebar-border mx-2 w-auto" />
-              <SidebarMenuItem key={"calendar"}>
-                <SidebarMenuButton asChild>
-                  <Link href={"/calendar"}>
-                    <Calendar />
-                    <span>Calendar</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               <SidebarMenuItem key={"logout"}>
                 <SidebarMenuButton asChild>
                   <Button

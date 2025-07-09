@@ -63,10 +63,10 @@ export default function Settings() {
     onMutate: () => {
       toast.loading("Updating group image...");
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.dismiss();
       toast.success("Group image updated successfully!");
-      utils.group.getGroupByUsername.invalidate({ groupUsername: params.id });
+      await utils.group.getGroupByUsername.invalidate({ groupUsername: params.id });
     },
     onError: (error) => {
       toast.dismiss();
