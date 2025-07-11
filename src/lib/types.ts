@@ -1,3 +1,4 @@
+import { customType } from "drizzle-orm/singlestore-core";
 import type { ReactElement } from "react";
 import { z } from "zod";
 import { habits, type DB_GroupMemberType } from "~/server/db/schema";
@@ -89,7 +90,7 @@ export type DB_UserHabitType_Create = z.infer<
 >;
 
 export const typeEnum = ["message", "event"] as const;
-export const eventTypeEnum = ["habit_created"] as const;
+export const eventTypeEnum = ["habit_created", "habit_completed"] as const;
 
 export const DB_MessageType_Zod_Create = z.object({
   type: z.enum(typeEnum),
@@ -109,3 +110,12 @@ export const DB_UserHabitLogType_Zod_Create = z.object({
 export type DB_UserHabitLogType_Zod_Create = z.infer<
   typeof DB_UserHabitLogType_Zod_Create
 >;
+
+export const dateOnly = customType<{
+  data: string;
+  driverData: string;
+}>({
+  dataType() {
+    return "date";
+  },
+});

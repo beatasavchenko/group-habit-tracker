@@ -15,6 +15,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/singlestore-core";
+import { eventTypeEnum } from "~/lib/types";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -202,7 +203,7 @@ export const messages = createTable(
       .primaryKey()
       .autoincrement(),
     type: singlestoreEnum(["message", "event"]).notNull(),
-    eventType: singlestoreEnum(["habit_created"]),
+    eventType: singlestoreEnum(eventTypeEnum),
     contents: text("contents").notNull(),
     groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
     userId: bigint("user_id", { mode: "number", unsigned: true }).notNull(),

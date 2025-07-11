@@ -66,7 +66,7 @@ export const habitRouter = createTRPCRouter({
     .input(DB_UserHabitLogType_Zod_Create)
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user.username) return null;
-      const res = await logHabit(input);
+      const res = await logHabit(input, ctx.session.user.id);
       return res ?? null;
     }),
 });
