@@ -24,7 +24,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { DB_HabitType_Zod_Create } from "~/lib/types";
+import { colors, DB_HabitType_Zod_Create } from "~/lib/types";
 import type { AppRouter } from "~/server/api/root";
 import { api } from "~/trpc/react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
@@ -37,19 +37,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-
-const colors = [
-  "#54478c",
-  "#2c699a",
-  "#048ba8",
-  "#0db39e",
-  "#16db93",
-  "#83e377",
-  "#b9e769",
-  "#efea5a",
-  "#f1c453",
-  "#f29e4c",
-] as const;
 
 const units = ["times", "minutes", "hours"] as const;
 

@@ -1,5 +1,6 @@
 "use client";
 
+import dayjs from "dayjs";
 import {
   Grid2x2,
   Grid3x3,
@@ -9,10 +10,12 @@ import {
 } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
+import HabitStreakComponent from "~/components/HabitStreakComponent";
 import GroupInfoForm from "~/components/settings/forms/info/GroupInfoForm";
 import { Card, CardContent } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import type { colors, weekDays } from "~/lib/types";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
@@ -35,10 +38,12 @@ export default function Overview() {
     },
   });
 
+  const currentDay = dayjs().day();
+
   return (
-    <div>
+    <div className="p-6">
       <Tabs defaultValue="week">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="mb-4 grid w-full grid-cols-3">
           <TabsTrigger value="week">
             <Grid2x2 />
             Weekly View
@@ -52,7 +57,7 @@ export default function Overview() {
             Yearly View
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="week">
+        <TabsContent className="flex flex-col gap-6" value="week">
           {userHabits.data?.map((habit) => (
             <Card key={habit.userHabit.id}>
               <CardContent className="flex flex-col gap-4">
@@ -89,6 +94,16 @@ export default function Overview() {
                     }
                   />
                 </div>
+                <HabitStreakComponent
+                  view="week"
+                  habitColor={habit.habit.color as (typeof colors)[number]}
+                  currentDay={currentDay}
+                />
+                <HabitStreakComponent
+                  view="month"
+                  habitColor={habit.habit.color as (typeof colors)[number]}
+                  currentDay={currentDay}
+                />
               </CardContent>
             </Card>
           ))}

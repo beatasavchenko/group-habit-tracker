@@ -155,6 +155,13 @@
       "when": 1752248351645,
       "tag": "0021_opposite_exodus",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "1",
+      "when": 1752480534131,
+      "tag": "0022_slimy_the_spike",
+      "breakpoints": true
     }
   ]
 }

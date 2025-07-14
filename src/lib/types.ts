@@ -90,7 +90,11 @@ export type DB_UserHabitType_Create = z.infer<
 >;
 
 export const typeEnum = ["message", "event"] as const;
-export const eventTypeEnum = ["habit_created", "habit_completed"] as const;
+export const eventTypeEnum = [
+  "habit_created",
+  "habit_completed",
+  "streak_updated",
+] as const;
 
 export const DB_MessageType_Zod_Create = z.object({
   type: z.enum(typeEnum),
@@ -119,3 +123,26 @@ export const dateOnly = customType<{
     return "date";
   },
 });
+
+export const colors = [
+  "#54478c",
+  "#2c699a",
+  "#048ba8",
+  "#0db39e",
+  "#16db93",
+  "#83e377",
+  "#b9e769",
+  "#efea5a",
+  "#f1c453",
+  "#f29e4c",
+] as const;
+
+export const weekDays = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];

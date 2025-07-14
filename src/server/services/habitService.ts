@@ -5,7 +5,7 @@ import type {
 } from "~/lib/types";
 import { habitLogs, habits, userHabits, users } from "../db/schema";
 import { db } from "../db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { createMessage } from "./messageService";
 import { getUserById } from "./userService";
 import dayjs from "dayjs";
@@ -91,12 +91,7 @@ export async function getGroupHabits(id: number) {
 }
 
 export async function getUserHabits(userId: number) {
-  const userHabit = await db
-    .select()
-    .from(userHabits)
-    .where(eq(userHabits.userId, userId));
-
-  if (!userHabit[0]?.habitId) return null;
+  const today = dayjs().startOf("day").format("YYYY-MM-DD");
 
   const rows = await db
     .select({
@@ -105,11 +100,17 @@ export async function getUserHabits(userId: number) {
       habitLog: habitLogs,
     })
     .from(userHabits)
-    .innerJoin(habits, eq(habits.id, userHabit[0]?.habitId))
-    .leftJoin(habitLogs, eq(habitLogs.userHabitId, userHabit[0]?.id))
+    .innerJoin(habits, eq(userHabits.habitId, habits.id))
+    .leftJoin(
+      habitLogs,
+      and(
+        eq(habitLogs.userHabitId, userHabits.id),
+        sql`DATE(${habitLogs.date}) = ${today}`,
+      ),
+    )
     .where(eq(userHabits.userId, userId));
 
-  return rows ?? [];
+  return rows;
 }
 
 export async function getUserHabitById(userId: number, id: number) {
@@ -142,56 +143,98 @@ export async function logHabit(
   habitDetails: DB_UserHabitLogType_Zod_Create,
   userId: number,
 ) {
-  const userHabit = await getUserHabitById(userId, habitDetails.userHabitId);
+  const today = dayjs().startOf("day");
+  const yesterday = today.subtract(1, "day");
 
-  const user = await db.select().from(users).where(eq(users.id, userId));
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  const [userHabit] = await db
+    .select({
+      userHabit: userHabits,
+      habit: habits,
+    })
+    .from(userHabits)
+    .innerJoin(habits, eq(habits.id, userHabits.habitId))
+    .where(eq(userHabits.id, habitDetails.userHabitId));
 
-  const today = dayjs().format("YYYY-MM-DD");
+  if (!user || !userHabit) return null;
 
-  const prevValue = await db
-    .select({ value: habitLogs.value, date: habitLogs.date })
+  const [existingLog] = await db
+    .select()
     .from(habitLogs)
     .where(
       and(
         eq(habitLogs.userHabitId, habitDetails.userHabitId),
-        sql`DATE(${habitLogs.date}) = ${today}`,
+        sql`DATE(${habitLogs.date}) = ${today.format("YYYY-MM-DD")}`,
       ),
     );
 
-  console.log(prevValue);
+  if (existingLog) {
+    if (existingLog.value >= userHabit.userHabit.goal) return;
 
-  let habitLog;
-  if (prevValue[0]) {
-    if (prevValue[0].value === userHabit?.userHabit.goal) return;
+    const newValue = existingLog.value + 1;
 
-    const newValue = prevValue[0].value + 1;
+    await db
+      .update(habitLogs)
+      .set({ value: newValue })
+      .where(eq(habitLogs.id, existingLog.id));
 
-    habitLog = await db.update(habitLogs).set({ value: newValue });
-
-    if (newValue === userHabit?.userHabit.goal) {
+    if (newValue === userHabit.userHabit.goal) {
       await createMessage({
         type: "event",
         eventType: "habit_completed",
-        contents: `@${user[0]?.username} completed a daily goal for a habit «${userHabit.habit.name}».`,
+        contents: `@${user.username} completed a daily goal for habit «${userHabit.habit.name}».`,
         groupId: userHabit.habit.groupId,
         userId,
         habitId: userHabit.habit.id,
       });
     }
 
-    if (!habitLog[0]) return null;
-
-    return habitLog[0];
+    return { id: existingLog.id, value: newValue };
   }
-  habitLog = await db
+
+  const [logId] = await db
     .insert(habitLogs)
-    .values({
-      ...habitDetails,
-      value: 1,
-    })
+    .values({ ...habitDetails, value: 1 })
     .$returningId();
 
-  if (!habitLog[0]) return null;
+  const isYesterday = dayjs(userHabit.userHabit.lastLoggedAt).isSame(
+    yesterday,
+    "day",
+  );
+  const isToday = dayjs(userHabit.userHabit.lastLoggedAt).isSame(today, "day");
 
-  return habitLog[0];
+  await db
+    .update(userHabits)
+    .set({
+      streakCount: isYesterday
+        ? userHabit.userHabit.streakCount + 1
+        : isToday
+          ? userHabit.userHabit.streakCount
+          : 1,
+      lastLoggedAt: today.toDate(),
+    })
+    .where(eq(userHabits.id, habitDetails.userHabitId));
+
+  let globalStreak = 1;
+  if (dayjs(user.globalLastLoggedAt).isSame(yesterday, "day")) {
+    globalStreak = user.globalStreakCount + 1;
+  }
+
+  await db
+    .update(users)
+    .set({
+      globalStreakCount: globalStreak,
+      globalLastLoggedAt: today.toDate(),
+    })
+    .where(eq(users.id, userId));
+
+  await createMessage({
+    type: "event",
+    eventType: "streak_updated",
+    contents: `@${user.username} has prolonged their streak to ${globalStreak} days.`,
+    groupId: userHabit.habit.groupId,
+    userId,
+  });
+
+  return { id: logId, value: 1 };
 }

@@ -41,6 +41,15 @@ export const users = createTable(
     code: text("code"),
     codeExpiresAt: timestamp("codeExpiresAt").defaultNow(),
     isVerified: boolean("is_verified").notNull().default(false),
+    globalStreakCount: bigint("global_streak_count", {
+      mode: "number",
+      unsigned: true,
+    })
+      .default(0)
+      .notNull(),
+    globalLastLoggedAt: timestamp("global_last_logged_at")
+      .defaultNow()
+      .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
@@ -173,7 +182,11 @@ export const userHabits = createTable(
     userId: bigint("user_id", { mode: "number", unsigned: true }).notNull(),
     goal: bigint("goal", { mode: "number", unsigned: true }).notNull(),
     frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
-    joinedAt: timestamp().defaultNow().notNull(),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+    streakCount: bigint("streak_count", { mode: "number", unsigned: true })
+      .default(0)
+      .notNull(),
+    lastLoggedAt: timestamp("last_logged_at").defaultNow().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
