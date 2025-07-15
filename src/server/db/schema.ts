@@ -204,6 +204,7 @@ export const habitLogs = createTable("habit_logs", {
   }).notNull(),
   date: timestamp().defaultNow().notNull(),
   value: bigint("value", { mode: "number", unsigned: true }).notNull(),
+  goal: bigint("goal", { mode: "number", unsigned: true }).notNull(),
   isCompleted: boolean("is_completed").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),

@@ -22,6 +22,7 @@ import {
   createHabit,
   getGroupHabits,
   getHabitById,
+  getHabitLogs,
   getUserHabits,
   joinHabit,
   logHabit,
@@ -67,6 +68,18 @@ export const habitRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user.username) return null;
       const res = await logHabit(input, ctx.session.user.id);
+      return res ?? null;
+    }),
+  getHabitLogs: protectedProcedure
+    .input(
+      z.object({
+        userHabitId: z.number(),
+        view: z.enum(["week", "month", "year"]),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session?.user.username) return null;
+      const res = await getHabitLogs(input.view, input.userHabitId);
       return res ?? null;
     }),
 });

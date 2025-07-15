@@ -57,3 +57,45 @@ export function parseMentionsAndHabits(text: string, habitId?: number) {
     return <span key={index}>{part}</span>;
   });
 }
+
+function hexToRgb(hex: string): [number, number, number] {
+  const num = parseInt(hex.replace("#", ""), 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return (
+    "#" +
+    [r, g, b]
+      .map((x) => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+      })
+      .join("")
+  );
+}
+
+function interpolateColors(to: string, factor: number): string {
+  const [r1, g1, b1] = hexToRgb("#f0f0f0");
+  const [r2, g2, b2] = hexToRgb(to);
+
+  const r = Math.round(r1 + (r2 - r1) * factor);
+  const g = Math.round(g1 + (g2 - g1) * factor);
+  const b = Math.round(b1 + (b2 - b1) * factor);
+
+  return rgbToHex(r, g, b);
+}
+
+export function getHabitColorIntensity({
+  value,
+  goal,
+  color,
+}: {
+  value: number;
+  goal: number;
+  color: string;
+}) {
+  if (value <= 0) return "#f0f0f0";
+  const progress = Math.min(Math.max(value / goal, 0), 1);
+  return interpolateColors(color, progress);
+}

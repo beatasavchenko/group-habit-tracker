@@ -17,7 +17,11 @@ export function useUserRedirect() {
   );
 
   useEffect(() => {
-    if (status === "authenticated" && !isLoading && !user) {
+    if (
+      (status === "authenticated" || status === "unauthenticated") &&
+      !isLoading &&
+      !user
+    ) {
       signOut({ callbackUrl: "/app/login" });
     }
   }, [status, isLoading, user]);

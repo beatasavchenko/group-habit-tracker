@@ -2,10 +2,11 @@ import type {
   DB_HabitType_Create,
   DB_UserHabitType_Create,
   DB_UserHabitLogType_Zod_Create,
+  frequencyEnum,
 } from "~/lib/types";
 import { habitLogs, habits, userHabits, users } from "../db/schema";
 import { db } from "../db";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray, gte, lte } from "drizzle-orm";
 import { createMessage } from "./messageService";
 import { getUserById } from "./userService";
 import dayjs from "dayjs";
@@ -194,7 +195,7 @@ export async function logHabit(
 
   const [logId] = await db
     .insert(habitLogs)
-    .values({ ...habitDetails, value: 1 })
+    .values({ ...habitDetails, goal: userHabit.userHabit.goal, value: 1 })
     .$returningId();
 
   const isYesterday = dayjs(userHabit.userHabit.lastLoggedAt).isSame(
@@ -237,4 +238,81 @@ export async function logHabit(
   });
 
   return { id: logId, value: 1 };
+}
+
+export async function getHabitLogs(
+  view: "week" | "month" | "year",
+  userHabitId: number,
+) {
+  const today = dayjs().startOf("day");
+
+  switch (view) {
+    case "week": {
+      const weekStart = dayjs().startOf("week").toDate();
+      const weekEnd = dayjs().endOf("week").toDate();
+
+      const habitLog = await db
+        .select({
+          date: habitLogs.date,
+          value: habitLogs.value,
+          goal: habitLogs.goal,
+        })
+        .from(habitLogs)
+        .where(
+          and(
+            eq(habitLogs.userHabitId, userHabitId),
+            gte(habitLogs.date, weekStart),
+            lte(habitLogs.date, weekEnd),
+          ),
+        );
+
+      return habitLog;
+    }
+
+    case "month": {
+      const monthStart = dayjs().startOf("month").toDate();
+      const monthEnd = dayjs().endOf("month").toDate();
+
+      const habitLog = await db
+        .select({
+          date: habitLogs.date,
+          value: habitLogs.value,
+          goal: userHabits.goal,
+        })
+        .from(habitLogs)
+        .innerJoin(userHabits, eq(habitLogs.userHabitId, userHabits.id))
+        .where(
+          and(
+            eq(habitLogs.userHabitId, userHabitId),
+            gte(habitLogs.date, monthStart),
+            lte(habitLogs.date, monthEnd),
+          ),
+        );
+
+      return habitLog;
+    }
+
+    case "year": {
+      const yearStart = dayjs().startOf("year").toDate();
+      const yearEnd = dayjs().endOf("year").toDate();
+
+      const habitLog = await db
+        .select({
+          date: habitLogs.date,
+          value: habitLogs.value,
+          goal: userHabits.goal,
+        })
+        .from(habitLogs)
+        .innerJoin(userHabits, eq(habitLogs.userHabitId, userHabits.id))
+        .where(
+          and(
+            eq(habitLogs.userHabitId, userHabitId),
+            gte(habitLogs.date, yearStart),
+            lte(habitLogs.date, yearEnd),
+          ),
+        );
+
+      return habitLog;
+    }
+  }
 }
