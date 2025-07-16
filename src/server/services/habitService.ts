@@ -6,7 +6,7 @@ import type {
 } from "~/lib/types";
 import { habitLogs, habits, userHabits, users } from "../db/schema";
 import { db } from "../db";
-import { eq, and, sql, inArray, gte, lte } from "drizzle-orm";
+import { eq, and, sql, inArray, gte, lte, asc, desc } from "drizzle-orm";
 import { createMessage } from "./messageService";
 import { getUserById } from "./userService";
 import dayjs from "dayjs";
@@ -109,7 +109,8 @@ export async function getUserHabits(userId: number) {
         sql`DATE(${habitLogs.date}) = ${today}`,
       ),
     )
-    .where(eq(userHabits.userId, userId));
+    .where(eq(userHabits.userId, userId))
+    .orderBy(asc(userHabits.lastLoggedAt));
 
   return rows;
 }
@@ -179,7 +180,17 @@ export async function logHabit(
       .set({ value: newValue })
       .where(eq(habitLogs.id, existingLog.id));
 
+    await db
+      .update(userHabits)
+      .set({ lastLoggedAt: today.toDate() })
+      .where(eq(userHabits.id, existingLog.userHabitId));
+
     if (newValue === userHabit.userHabit.goal) {
+      await db
+        .update(habitLogs)
+        .set({ isCompleted: true })
+        .where(eq(habitLogs.id, existingLog.id));
+
       await createMessage({
         type: "event",
         eventType: "habit_completed",
