@@ -206,14 +206,21 @@ export async function logHabit(
 
   const [logId] = await db
     .insert(habitLogs)
-    .values({ ...habitDetails, goal: userHabit.userHabit.goal, value: 1 })
+    .values({
+      ...habitDetails,
+      goal: userHabit.userHabit.goal,
+      value: 1,
+      isCompleted: userHabit.userHabit.goal === 1,
+    })
     .$returningId();
 
   const isYesterday = dayjs(userHabit.userHabit.lastLoggedAt).isSame(
     yesterday,
     "day",
   );
-  const isToday = dayjs(userHabit.userHabit.lastLoggedAt).isSame(today, "day");
+  const isToday = userHabit.userHabit.lastLoggedAt
+    ? dayjs(userHabit.userHabit.lastLoggedAt).isSame(today, "day")
+    : false;
 
   await db
     .update(userHabits)

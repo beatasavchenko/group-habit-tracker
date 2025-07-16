@@ -1,4 +1,6 @@
+import dayjs from "dayjs";
 import { customType } from "drizzle-orm/singlestore-core";
+import { spec } from "node:test/reporters";
 import type { ReactElement } from "react";
 import { z } from "zod";
 import { habits, type DB_GroupMemberType } from "~/server/db/schema";
@@ -67,11 +69,16 @@ export const frequencyEnum = ["day", "week", "month"] as const;
 
 export const DB_HabitType_Zod_Create = z.object({
   name: z.string(),
-  description: z.string().optional().nullable(),
   color: z.string(),
   goal: z.number().nullable(),
   unit: z.string(),
-  frequency: z.enum(frequencyEnum),
+  frequency: z.enum(["day", "week", "month"]),
+  isEveryDay: z.boolean().optional(),
+  specificDays: z.array(z.number()).optional(),
+  numDaysPerWeek: z.number().min(1).max(7).optional(),
+  enabledReminder: z.boolean().optional(),
+  reminderTime: z.string().optional(),
+  description: z.string().optional().nullable(),
   groupId: z.number(),
 });
 

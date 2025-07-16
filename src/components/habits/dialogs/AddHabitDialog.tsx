@@ -4,7 +4,7 @@ import { Check, Palette } from "lucide-react";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import type z from "zod";
+import z from "zod";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -24,7 +24,11 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { colors, DB_HabitType_Zod_Create } from "~/lib/types";
+import {
+  colors,
+  DB_HabitType_Zod_Create,
+  weekDays,
+} from "~/lib/types";
 import type { AppRouter } from "~/server/api/root";
 import { api } from "~/trpc/react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
@@ -37,10 +41,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { Label } from "~/components/ui/label";
+import dayjs from "dayjs";
 
 const units = ["times", "minutes", "hours"] as const;
 
-export const formSchema = DB_HabitType_Zod_Create.omit({ groupId: true });
+const formSchema = DB_HabitType_Zod_Create.omit({ groupId: true }).extend({
+  daySettings: z.enum(["every-day", "schedule", "num-days"]),
+});
 
 function AddHabitDialog({
   groupData,
@@ -51,10 +60,13 @@ function AddHabitDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      color: colors[0] as string,
+      color: colors[0],
       frequency: "day",
       goal: 1,
       unit: "times",
+      daySettings: "every-day",
+      isEveryDay: true,
+      enabledReminder: false,
     },
     mode: "onChange",
   });
@@ -83,9 +95,51 @@ function AddHabitDialog({
 
   const selectedColor = form.watch("color");
   const frequency = form.watch("frequency");
+  const daySettings = form.watch("daySettings");
+
+  const [selectedDays, setSelectedDays] = useState<boolean[]>([
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+  ]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    createHabit.mutate({ ...values, groupId: Number(groupData?.group.id) });
+    const base = {
+      name: values.name,
+      color: values.color,
+      goal: values.goal,
+      unit: values.unit,
+      frequency: values.frequency,
+      enabledReminder: values.enabledReminder ?? false,
+      reminderTime: values.reminderTime ?? dayjs().format("HH:mm:ss"),
+      description: values.description ?? null,
+      groupId: Number(groupData?.group.id),
+    };
+
+    let scheduleFields = {};
+
+    if (values.daySettings === "every-day") {
+      scheduleFields = { isEveryDay: true };
+    } else if (values.daySettings === "schedule") {
+      scheduleFields = {
+        isEveryDay: false,
+        specificDays: values.specificDays ?? [],
+      };
+    } else if (values.daySettings === "num-days") {
+      scheduleFields = {
+        isEveryDay: false,
+        numDaysPerWeek: values.numDaysPerWeek ?? 7,
+      };
+    }
+
+    createHabit.mutate({
+      ...base,
+      ...scheduleFields,
+    });
   }
 
   return (
@@ -169,33 +223,6 @@ function AddHabitDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="frequency"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Frequency</FormLabel>
-                  <FormControl>
-                    <Tabs
-                      value={frequency}
-                      onValueChange={(value: string) =>
-                        form.setValue(
-                          "frequency",
-                          value as "day" | "week" | "month",
-                        )
-                      }
-                    >
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="day">Daily</TabsTrigger>
-                        <TabsTrigger value="week">Weekly</TabsTrigger>
-                        <TabsTrigger value="month">Monthly</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  </FormControl>
-                  <FormMessage className="text-left" />
-                </FormItem>
-              )}
-            />
             <div className="flex items-center gap-2">
               <FormField
                 control={form.control}
@@ -225,7 +252,10 @@ function AddHabitDialog({
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <FormControl>
-                      <Select defaultValue="times">
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <SelectTrigger className="w-36">
                           <SelectValue />
                         </SelectTrigger>
@@ -246,6 +276,115 @@ function AddHabitDialog({
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="frequency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Frequency</FormLabel>
+                  <FormControl>
+                    <Tabs
+                      value={frequency}
+                      onValueChange={(value: string) =>
+                        form.setValue(
+                          "frequency",
+                          value as "day" | "week" | "month",
+                        )
+                      }
+                    >
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="day">Daily</TabsTrigger>
+                        <TabsTrigger value="week">Weekly</TabsTrigger>
+                        <TabsTrigger value="month">Monthly</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage className="text-left" />
+                </FormItem>
+              )}
+            />
+            {frequency === "day" && (
+              <FormField
+                control={form.control}
+                name="daySettings"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Days</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="every-day" id="every-day" />
+                          <Label htmlFor="every-day">Every day</Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="schedule" id="schedule" />
+                          <Label htmlFor="schedule">Set a schedule</Label>
+                        </div>
+
+                        {daySettings === "schedule" && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {weekDays.map((day, index) => (
+                              <div
+                                key={index}
+                                onClick={() => {
+                                  const updated = [...selectedDays];
+                                  updated[index] = !updated[index];
+                                  setSelectedDays(updated);
+                                }}
+                                className={`flex h-10 w-10 items-center justify-center rounded-full p-2 text-center ring-2 hover:cursor-pointer ${
+                                  selectedDays[index]
+                                    ? "bg-black text-white ring-0"
+                                    : ""
+                                }`}
+                              >
+                                {day.charAt(0).toUpperCase()}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="num-days" id="num-days" />
+                          <Label htmlFor="num-days">
+                            Number of days per week
+                          </Label>
+                        </div>
+
+                        {daySettings === "num-days" && (
+                          <FormField
+                            control={form.control}
+                            name="numDaysPerWeek"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    max={7}
+                                    value={field.value || ""}
+                                    onChange={(e) =>
+                                      form.setValue(
+                                        "numDaysPerWeek",
+                                        Number(e.target.value),
+                                      )
+                                    }
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </RadioGroup>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter>
               <Button type="submit">Create</Button>
             </DialogFooter>

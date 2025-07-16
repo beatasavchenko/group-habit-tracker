@@ -3,6 +3,7 @@
 import {
   Calendar,
   CalendarCheck2,
+  CalendarDays,
   Check,
   ChevronsUpDown,
   Command,
@@ -273,6 +274,14 @@ export function AppSidebar() {
                   <Link href={"/app/overview"}>
                     <CalendarCheck2 />
                     <span>Habit overview</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem key={"calendar"}>
+                <SidebarMenuButton asChild>
+                  <Link href={"/app/calendar"}>
+                    <CalendarDays />
+                    <span>Calendar</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -169,6 +169,27 @@
       "when": 1752589985935,
       "tag": "0023_fantastic_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "1",
+      "when": 1752667996813,
+      "tag": "0024_old_glorian",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "1",
+      "when": 1752668798092,
+      "tag": "0025_red_the_enforcers",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "1",
+      "when": 1752675442581,
+      "tag": "0026_strange_stature",
+      "breakpoints": true
     }
   ]
 }

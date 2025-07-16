@@ -1,6 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
+import dayjs from "dayjs";
 import { is, relations, sql } from "drizzle-orm";
 import { integer } from "drizzle-orm/gel-core";
 import {
@@ -13,6 +14,7 @@ import {
   singlestoreTable,
   singlestoreTableCreator,
   text,
+  time,
   timestamp,
 } from "drizzle-orm/singlestore-core";
 import { eventTypeEnum } from "~/lib/types";
@@ -164,6 +166,11 @@ export const habits = createTable(
     goal: bigint("goal", { mode: "number", unsigned: true }).notNull(),
     unit: text("unit").notNull(),
     frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
+    isEveryDay: boolean("is_every_day").notNull().default(true),
+    specificDays: text("specific_days").$type<number[]>(),
+    numDaysPerWeek: int("num_days_per_week").default(7),
+    enabledReminder: boolean("enabled_reminder").notNull().default(false),
+    reminderTime: time("reminder_time").default(dayjs().format("HH:mm:ss")),
     groupId: bigint("group_id", { mode: "number", unsigned: true }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
@@ -182,11 +189,16 @@ export const userHabits = createTable(
     userId: bigint("user_id", { mode: "number", unsigned: true }).notNull(),
     goal: bigint("goal", { mode: "number", unsigned: true }).notNull(),
     frequency: singlestoreEnum(["day", "week", "month"]).notNull(),
+    isEveryDay: boolean("is_every_day").default(true),
+    specificDays: text("specific_days").$type<number[]>(),
+    numDaysPerWeek: int("num_days_per_week").default(7),
+    enabledReminder: boolean("enabled_reminder").default(false),
+    reminderTime: time("reminder_time").default(dayjs().format("HH:mm:ss")),
     joinedAt: timestamp("joined_at").defaultNow().notNull(),
     streakCount: bigint("streak_count", { mode: "number", unsigned: true })
       .default(0)
       .notNull(),
-    lastLoggedAt: timestamp("last_logged_at").defaultNow().notNull(),
+    lastLoggedAt: timestamp("last_logged_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },
