@@ -68,15 +68,22 @@ export async function createUser(userToCreate: Partial<DB_UserType>) {
 export async function updateUser(
   id: number,
   data: Partial<{
+    name: string | null;
+    username: string | null;
+    image: string | null;
     email: string;
     code: string | null;
     isVerified: boolean;
     codeExpiresAt: Date | null;
   }>,
 ) {
+  const filteredData = Object.fromEntries(
+    Object.entries(data).filter(([key, value]) => value !== null),
+  );
+
   const user = await db
     .update(users)
-    .set(data)
+    .set(filteredData)
     .where(eq(users.id, id))
     .$dynamic();
 

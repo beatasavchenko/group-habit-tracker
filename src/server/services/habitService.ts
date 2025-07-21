@@ -6,7 +6,7 @@ import type {
 } from "~/lib/types";
 import { habitLogs, habits, userHabits, users } from "../db/schema";
 import { db } from "../db";
-import { eq, and, sql, inArray, gte, lte, asc, desc } from "drizzle-orm";
+import { eq, and, sql, inArray, gte, lte, asc, desc, sum } from "drizzle-orm";
 import { createMessage } from "./messageService";
 import { getUserById } from "./userService";
 import dayjs from "dayjs";
@@ -333,4 +333,59 @@ export async function getHabitLogs(
       return habitLog;
     }
   }
+}
+
+export async function getLogsForUser(userId: number) {
+  const yearStart = dayjs().startOf("year");
+  const yearEnd = dayjs().endOf("year");
+
+  const data = await db
+    .select({
+      date: habitLogs.date,
+      value: sql`SUM(${habitLogs.value})`,
+      goal: sql`SUM(${userHabits.goal})`,
+    })
+    .from(habitLogs)
+    .innerJoin(userHabits, eq(habitLogs.userHabitId, userHabits.id))
+    .where(
+      and(
+        eq(userHabits.userId, userId),
+        gte(habitLogs.date, yearStart.toDate()),
+        lte(habitLogs.date, yearEnd.toDate()),
+      ),
+    )
+    .groupBy(habitLogs.date)
+    .orderBy(habitLogs.date);
+
+  const logMap = new Map<string, { value: number; goal: number }>();
+  data.forEach((entry) => {
+    const dateStr = dayjs(entry.date).format("YYYY-MM-DD");
+    logMap.set(dateStr, {
+      value: Number(entry.value),
+      goal: Number(entry.goal),
+    });
+  });
+
+  const allDays: {
+    date: string;
+    value: number;
+    goal: number;
+  }[] = [];
+
+  for (
+    let d = yearStart;
+    d.isBefore(yearEnd) || d.isSame(yearEnd, "day");
+    d = d.add(1, "day")
+  ) {
+    const dateStr = d.format("YYYY-MM-DD");
+    const dayLog = logMap.get(dateStr);
+
+    allDays.push({
+      date: dateStr,
+      value: dayLog?.value ?? 0,
+      goal: dayLog?.goal ?? 0,
+    });
+  }
+
+  return allDays;
 }

@@ -17,11 +17,13 @@ export default function HabitStreakComponent({
   habitColor,
   currentDay,
   userHabitId,
+  userId,
 }: {
   view: "week" | "month" | "year";
-  habitColor: (typeof colors)[number];
+  habitColor: (typeof colors)[number] | "#2AAA8A";
   currentDay: number;
-  userHabitId: number;
+  userHabitId?: number;
+  userId?: number;
 }) {
   const numberOfDaysInAMonth = dayjs().daysInMonth();
   let currentDayInAMonth = dayjs().date();
@@ -84,16 +86,29 @@ export default function HabitStreakComponent({
     weeks.push(calendarDates.slice(i, i + 7));
   }
 
-  const { data: habitLogs } = api.habit.getHabitLogs.useQuery({
-    view,
-    userHabitId,
-  });
-
-  const habitLogMap = new Map(
-    (habitLogs ?? []).map((log) => [dayjs(log.date).format("YYYY-MM-DD"), log]),
+  const { data: habitLogs } = api.habit.getHabitLogs.useQuery(
+    {
+      view,
+      userHabitId: userHabitId ?? 0,
+    },
+    { enabled: !!userHabitId },
   );
 
-  console.log(habitLogs);
+  const { data: habitLogsUser } = api.habit.getLogsForUser.useQuery(
+    {
+      userId: userId ?? 0,
+    },
+    { enabled: !!userId },
+  );
+
+  const habitLogMap = new Map(
+    (habitLogs ?? habitLogsUser ?? []).map((log) => [
+      dayjs(log.date).format("YYYY-MM-DD"),
+      log,
+    ]),
+  );
+
+  console.log(habitLogs, habitLogsUser);
 
   const week = (
     <div className="flex gap-4">
@@ -108,12 +123,12 @@ export default function HabitStreakComponent({
             key={day}
             style={{
               backgroundColor: getHabitColorIntensity({
-                value: log?.value ?? 0,
-                goal: log?.goal ?? 1,
+                value: Number(log?.value) ?? 0,
+                goal: Number(log?.goal) ?? 1,
                 color: habitColor,
               }),
             }}
-            className={`flex h-16 w-16 items-center justify-center rounded-full ${
+            className={`bg-muted flex h-16 w-16 items-center justify-center rounded-full ${
               currentDay === index + 1 ? "ring-2 ring-black" : ""
             }`}
           >
@@ -141,8 +156,8 @@ export default function HabitStreakComponent({
               dateObj.isCurrentMonth
                 ? {
                     backgroundColor: getHabitColorIntensity({
-                      value: log?.value ?? 0,
-                      goal: log?.goal ?? 1,
+                      value: Number(log?.value) ?? 0,
+                      goal: Number(log?.goal) ?? 1,
                       color: habitColor,
                     }),
                   }
@@ -152,7 +167,7 @@ export default function HabitStreakComponent({
               "flex h-8 w-8 items-center justify-center rounded-md text-sm",
               dateObj.isCurrentMonth
                 ? dateObj.isToday
-                  ? "bg-black ring-2 ring-black"
+                  ? "ring-2 ring-black"
                   : undefined
                 : "bg-muted text-muted-foreground opacity-60",
             )}
@@ -187,15 +202,15 @@ export default function HabitStreakComponent({
                   dateObj.isCurrentYear
                     ? {
                         backgroundColor: getHabitColorIntensity({
-                          value: log?.value ?? 0,
-                          goal: log?.goal ?? 1,
+                          value: Number(log?.value) ?? 0,
+                          goal: Number(log?.goal) ?? 1,
                           color: habitColor,
                         }),
                       }
                     : undefined
                 }
                 className={cn(
-                  "h-4 w-4 rounded-sm transition-all",
+                  "bg-muted h-4 w-4 rounded-sm transition-all",
                   dateObj.isToday ? "ring-2 ring-black" : "",
                   !dateObj.isCurrentYear
                     ? "bg-muted text-muted-foreground opacity-50"

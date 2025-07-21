@@ -22,6 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "./ui/accordion";
+import StreakComponent from "./StreakComponent";
 
 type ViewHabitComponentProps = {
   userHabits: inferRouterOutputs<AppRouter>["habit"]["getUserHabits"];
@@ -76,14 +77,11 @@ export default function ViewHabitComponent(props: ViewHabitComponentProps) {
                     >
                       {habit.habit?.name}
                     </div>
-                    <div
-                      className={`flex items-center justify-center gap-1 rounded-lg ${dayjs(habit.userHabit.lastLoggedAt).format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD") && (habit.habitLog?.value ?? 0) > 0 ? "bg-orange-500" : "bg-gray-500"} px-3 py-2 text-center text-white`}
-                    >
-                      <Flame className="h-6 w-6" />
-                      <span className="text-xl">
-                        {habit.userHabit.streakCount}
-                      </span>
-                    </div>
+                    <StreakComponent
+                      streakCount={habit.userHabit.streakCount}
+                      lastLoggedAt={habit.userHabit.lastLoggedAt ?? new Date()}
+                      value={habit.habitLog?.value}
+                    />
                   </div>
                   <button
                     disabled={habit.habitLog?.value === habit.userHabit.goal}

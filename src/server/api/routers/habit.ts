@@ -23,6 +23,7 @@ import {
   getGroupHabits,
   getHabitById,
   getHabitLogs,
+  getLogsForUser,
   getUserHabits,
   joinHabit,
   logHabit,
@@ -80,6 +81,13 @@ export const habitRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       if (!ctx.session?.user.username) return null;
       const res = await getHabitLogs(input.view, input.userHabitId);
+      return res ?? null;
+    }),
+  getLogsForUser: protectedProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session?.user.username) return null;
+      const res = await getLogsForUser(ctx.session.user.id);
       return res ?? null;
     }),
 });

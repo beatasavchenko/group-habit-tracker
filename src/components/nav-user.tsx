@@ -27,6 +27,8 @@ import {
 import { Button } from "./ui/button";
 import { api } from "~/trpc/react";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
+import React from "react";
 export function NavUser({
   user,
 }: {
@@ -40,10 +42,12 @@ export function NavUser({
 
   const updateUser = api.user.updateUser.useMutation();
 
+  const [open, setOpen] = React.useState(false);
+
   return (
     <SidebarMenu>
       <SidebarMenuItem className="mb-3">
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
@@ -72,8 +76,14 @@ export function NavUser({
           >
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <UserCircleIcon />
-                Account
+                <Link
+                  href="/app/account"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2"
+                >
+                  <UserCircleIcon />
+                  Account
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings />
