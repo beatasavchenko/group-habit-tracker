@@ -15,6 +15,17 @@ import {
 export function ModeToggle() {
   const { setTheme } = useTheme();
 
+  const [selectedTheme, setSelectedTheme] = React.useState<string | undefined>(
+    typeof window !== "undefined"
+      ? (localStorage.getItem("theme") ?? undefined)
+      : undefined,
+  );
+
+  const handleThemeChange = (theme: "light" | "dark" | "system") => {
+    setSelectedTheme(theme);
+    setTheme(theme);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -25,13 +36,22 @@ export function ModeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
+        <DropdownMenuItem
+          className={`${selectedTheme === "light" ? "bg-muted" : ""}`}
+          onClick={() => handleThemeChange("light")}
+        >
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
+        <DropdownMenuItem
+          className={`${selectedTheme === "dark" ? "bg-muted" : ""}`}
+          onClick={() => handleThemeChange("dark")}
+        >
           Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
+        <DropdownMenuItem
+          className={`${selectedTheme === "system" ? "bg-muted" : ""}`}
+          onClick={() => handleThemeChange("system")}
+        >
           System
         </DropdownMenuItem>
       </DropdownMenuContent>

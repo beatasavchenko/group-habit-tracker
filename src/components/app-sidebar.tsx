@@ -199,24 +199,28 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <ModeToggle />
+          <SidebarGroupContent className="relative h-[calc(100vh-30px)]">
+            <SidebarMenu className="h-full">
               <NavUser
-                user={{ name: "Kitty", email: "kitty@example.com", avatar: "" }}
+                user={{
+                  ...session?.user,
+                  name: session?.user.name || "User",
+                  email: session?.user.email || "user@example.com",
+                  image: session?.user.image || "default.jpg",
+                }}
               />
               <Dialog
                 open={dialogOpen}
                 onOpenChange={() => setDialogOpen(!dialogOpen)}
               >
                 <DialogTrigger asChild>
-                  <SidebarMenuButton
-                    tooltip="Quick Create"
-                    className="h-10 min-w-8 duration-200 ease-linear"
+                  <Button
+                    variant="outline"
+                    className="flex items-center justify-start"
                   >
                     <PlusCircleIcon />
                     <span>Quick Create</span>
-                  </SidebarMenuButton>
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
@@ -246,7 +250,7 @@ export function AppSidebar() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <Popover open={open} onOpenChange={setOpen}>
+              {/* <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <Label className="relative h-10 w-full">
                     <Search className="absolute top-1/2 left-3 z-10 -translate-y-1/2 transform text-gray-500" />
@@ -268,7 +272,7 @@ export function AppSidebar() {
                       </Link>
                     ))}
                 </PopoverContent>
-              </Popover>
+              </Popover> */}
               <SidebarMenuItem key={"overview"}>
                 <SidebarMenuButton asChild>
                   <Link href={"/app/overview"}>
@@ -334,26 +338,10 @@ export function AppSidebar() {
                   ))}
                 </>
               )} */}
-              <Separator className="bg-sidebar-border mx-2 w-auto" />
-              <SidebarMenuItem key={"logout"}>
-                <SidebarMenuButton asChild>
-                  <Button
-                    onClick={async () => {
-                      await updateUser.mutateAsync({
-                        isVerified: false,
-                      });
-                      await signOut({
-                        redirect: true,
-                        callbackUrl: "/app/login",
-                      });
-                    }}
-                  >
-                    <LogOut />
-                    <span>Logout</span>
-                  </Button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
+            <div className="absolute right-0 bottom-0">
+              <ModeToggle />
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
