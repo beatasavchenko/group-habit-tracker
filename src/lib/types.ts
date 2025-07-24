@@ -1,8 +1,10 @@
+import type { inferRouterOutputs } from "@trpc/server";
 import dayjs from "dayjs";
 import { customType } from "drizzle-orm/singlestore-core";
 import { spec } from "node:test/reporters";
 import type { ReactElement } from "react";
 import { z } from "zod";
+import type { AppRouter } from "~/server/api/root";
 import { habits, type DB_GroupMemberType } from "~/server/db/schema";
 
 export type Tag = {
@@ -113,6 +115,9 @@ export const DB_MessageType_Zod_Create = z.object({
 });
 
 export type DB_MessageType_Create = z.infer<typeof DB_MessageType_Zod_Create>;
+
+export type Message =
+  inferRouterOutputs<AppRouter>["message"]["getGroupMessages"][number];
 
 export const DB_UserHabitLogType_Zod_Create = z.object({
   userHabitId: z.number(),

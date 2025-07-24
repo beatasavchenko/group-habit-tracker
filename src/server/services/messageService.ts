@@ -2,6 +2,8 @@ import type { DB_HabitType_Create, DB_MessageType_Create } from "~/lib/types";
 import { habits, messages } from "../db/schema";
 import { db } from "../db";
 import { asc, desc, eq } from "drizzle-orm";
+import { pusherServer } from "~/lib/pusher";
+import { toPusherKey } from "~/lib/utils";
 
 export async function getMessageById(id: number) {
   const message = await db
@@ -26,7 +28,16 @@ export async function createMessage(messageToCreate: DB_MessageType_Create) {
   }
 
   if (!message?.[0]) return null;
-  return await getMessageById(message[0]?.id);
+
+  const newMessage = await getMessageById(message[0].id);
+
+  pusherServer.trigger(
+    toPusherKey(`group:${messageToCreate.groupId}`),
+    "incoming-message",
+    newMessage,
+  );
+
+  return newMessage;
 }
 
 export async function getGroupMessages(id: number) {

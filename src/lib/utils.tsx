@@ -99,3 +99,7 @@ export function getHabitColorIntensity({
   const progress = Math.min(Math.max(value / goal, 0), 1);
   return interpolateColors(color, progress);
 }
+
+export function toPusherKey(key: string) {
+  return key.replace(/:/g, "__");
+}

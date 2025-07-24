@@ -1,9 +1,16 @@
 "use client";
 
-import { SessionProvider } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import GlobalPusherHandler from "~/components/GlobalPusherListener";
 
-export default function RootLayout({
+export default function LayoutWrapper({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <SessionProvider>{children}</SessionProvider>;
+  const session = useSession();
+  return (
+    <>
+      <GlobalPusherHandler userId={Number(session.data?.user.id)} />
+      {children}
+    </>
+  );
 }

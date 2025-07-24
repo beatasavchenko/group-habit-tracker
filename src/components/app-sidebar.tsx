@@ -63,6 +63,7 @@ import { redirect } from "next/dist/server/api-utils";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { useParams, useRouter } from "next/navigation";
+import { useMessageStore } from "~/app/stores/messageStore";
 
 export const communitySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -195,6 +196,8 @@ export function AppSidebar() {
 
   const { data: groups } = api.group.getGroupsForUser.useQuery();
 
+  const unreadGroups = useMessageStore((s) => s.unreadGroups);
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -292,27 +295,35 @@ export function AppSidebar() {
               {groups && groups.length > 0 && (
                 <>
                   <SidebarGroupLabel>Groups</SidebarGroupLabel>
-                  {groups?.map((group) => (
-                    <SidebarMenuItem key={group.id}>
-                      <SidebarMenuButton asChild>
-                        <a
-                          className={`py-4 ${group.groupUsername === params.id && "bg-accent"}`}
-                          href={`${process.env.NEXT_PUBLIC_BASE_URL}app/groups/${group.groupUsername}`}
-                        >
-                          <Avatar className="h-8 w-8 rounded-full">
-                            <AvatarImage
-                              src={group.image ?? ""}
-                              alt={group.name}
-                            />
-                            <AvatarFallback className="rounded-full">
-                              {group.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{group.name}</span>
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {groups?.map((group) => {
+                    const hasUnread = unreadGroups.has(group.id);
+                    return (
+                      <SidebarMenuItem key={group.id}>
+                        <SidebarMenuButton asChild>
+                          <a
+                            className={`flex w-full items-center py-4 ${group.groupUsername === params.id && "bg-accent"}`}
+                            href={`${process.env.NEXT_PUBLIC_BASE_URL}app/groups/${group.groupUsername}`}
+                          >
+                            <Avatar className="h-8 w-8 rounded-full">
+                              <AvatarImage
+                                src={group.image ?? ""}
+                                alt={group.name}
+                              />
+                              <AvatarFallback className="rounded-full">
+                                {group.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex w-full items-center justify-between">
+                              <span>{group.name}</span>
+                              {hasUnread && (
+                                <span className="h-2 w-2 rounded-full bg-red-500" />
+                              )}
+                            </div>
+                          </a>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </>
               )}
               {/* {communities && communities.length > 0 && (
